@@ -1,14 +1,14 @@
-// Semplice protezione della pagina principale (opzionale)
-// Se non vuoi l'accesso libero, decommenta le righe sotto
-/*
-const ACCESS_CODE = 'voto2024';
-const enteredCode = prompt('Inserisci il codice di accesso per votare:');
+// Semplice protezione della pagina principale per simulare un link "privato"
+const ACCESS_CODE = 'voto2026'; // CAMBIAMI con il codice che vuoi dare ai tuoi amici
+const enteredCode = localStorage.getItem('access_granted') || prompt('Inserisci il codice di accesso per vedere le foto:');
+
 if (enteredCode !== ACCESS_CODE) {
     alert('Codice errato');
-    document.body.innerHTML = '<h1>Accesso Negato</h1>';
+    document.body.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100vh; color:white; font-family:sans-serif;"><h1>Accesso Negato</h1></div>';
     throw new Error('Access Denied');
+} else {
+    localStorage.setItem('access_granted', ACCESS_CODE);
 }
-*/
 
 async function loadPhotos() {
     const container = document.getElementById('photo-container');
