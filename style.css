@@ -6,6 +6,8 @@
     --text: #f8fafc;
     --text-muted: #94a3b8;
     --accent: #f43f5e;
+    --like-color: #4ade80;
+    --dislike-color: #f43f5e;
     --glass: rgba(255, 255, 255, 0.03);
     --glass-border: rgba(255, 255, 255, 0.1);
 }
@@ -55,6 +57,35 @@ h1 {
     font-size: 1.1rem;
 }
 
+/* Navigation */
+.nav-links {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.nav-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1.2rem;
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.nav-link:hover {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+    transform: translateY(-2px);
+}
+
 /* Grid Layout */
 .photo-grid {
     display: grid;
@@ -89,7 +120,14 @@ h1 {
 .photo-info {
     padding: 1.5rem;
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Vote Buttons */
+.vote-buttons {
+    display: flex;
+    gap: 1rem;
     align-items: center;
 }
 
@@ -97,7 +135,7 @@ h1 {
     background: var(--glass);
     border: 1px solid var(--glass-border);
     color: var(--text);
-    padding: 0.75rem 1.5rem;
+    padding: 0.75rem 1.25rem;
     border-radius: 12px;
     cursor: pointer;
     display: flex;
@@ -105,24 +143,60 @@ h1 {
     gap: 0.5rem;
     transition: all 0.3s ease;
     font-weight: 600;
+    font-size: 0.95rem;
+    font-family: 'Outfit', sans-serif;
 }
 
 .vote-btn:hover {
-    background: var(--accent);
-    border-color: var(--accent);
-    transform: scale(1.05);
+    transform: scale(1.08);
 }
 
-.vote-btn.voted {
-    background: var(--accent);
-    border-color: var(--accent);
-    cursor: default;
+.vote-btn:disabled {
+    opacity: 0.6;
+    cursor: wait;
 }
 
-.vote-count {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: var(--primary);
+.like-btn:hover {
+    background: rgba(74, 222, 128, 0.15);
+    border-color: var(--like-color);
+    color: var(--like-color);
+}
+
+.like-btn.active {
+    background: var(--like-color);
+    border-color: var(--like-color);
+    color: #0f172a;
+}
+
+.dislike-btn:hover {
+    background: rgba(244, 63, 94, 0.15);
+    border-color: var(--dislike-color);
+    color: var(--dislike-color);
+}
+
+.dislike-btn.active {
+    background: var(--dislike-color);
+    border-color: var(--dislike-color);
+    color: white;
+}
+
+/* Pulse animation for vote feedback */
+@keyframes pulse-anim {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.15);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+.vote-btn.pulse {
+    animation: pulse-anim 0.3s ease-out;
 }
 
 /* Upload Section (Admin) */
@@ -148,6 +222,131 @@ h1 {
     font-size: 3rem;
     margin-bottom: 1rem;
     display: block;
+}
+
+/* Ranking Page */
+.ranking-card {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    background: var(--card-bg);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+    animation: fadeInUp 0.5s ease-out backwards;
+}
+
+.ranking-card:hover {
+    border-color: var(--primary);
+    transform: translateX(8px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.rank-position {
+    font-size: 2rem;
+    font-weight: 800;
+    min-width: 60px;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.rank-position.gold {
+    color: #fbbf24;
+    font-size: 2.5rem;
+}
+
+.rank-position.silver {
+    color: #d1d5db;
+    font-size: 2.3rem;
+}
+
+.rank-position.bronze {
+    color: #d97706;
+    font-size: 2.1rem;
+}
+
+.rank-photo {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 14px;
+    flex-shrink: 0;
+}
+
+.rank-info {
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.rank-stats {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+}
+
+.rank-stat {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.like-stat {
+    color: var(--like-color);
+}
+
+.dislike-stat {
+    color: var(--dislike-color);
+}
+
+.rank-score {
+    font-weight: 700;
+    font-size: 1.1rem;
+    padding: 0.3rem 0.8rem;
+    border-radius: 8px;
+}
+
+.rank-score.positive {
+    color: var(--like-color);
+    background: rgba(74, 222, 128, 0.1);
+}
+
+.rank-score.negative {
+    color: var(--dislike-color);
+    background: rgba(244, 63, 94, 0.1);
+}
+
+/* Admin Table */
+.results-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 2rem;
+    background: var(--card-bg);
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.results-table th,
+.results-table td {
+    padding: 1.25rem;
+    text-align: left;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.results-table th {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--primary);
+    font-weight: 700;
+}
+
+.results-table tr:hover {
+    background: rgba(255, 255, 255, 0.02);
 }
 
 /* Animations */
@@ -185,33 +384,6 @@ h1 {
     }
 }
 
-/* Admin Table */
-.results-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 2rem;
-    background: var(--card-bg);
-    border-radius: 16px;
-    overflow: hidden;
-}
-
-.results-table th,
-.results-table td {
-    padding: 1.25rem;
-    text-align: left;
-    border-bottom: 1px solid var(--glass-border);
-}
-
-.results-table th {
-    background: rgba(255, 255, 255, 0.05);
-    color: var(--primary);
-    font-weight: 700;
-}
-
-.results-table tr:hover {
-    background: rgba(255, 255, 255, 0.02);
-}
-
 /* Responsive */
 @media (max-width: 768px) {
     h1 {
@@ -220,5 +392,24 @@ h1 {
 
     .container {
         padding: 1rem;
+    }
+
+    .ranking-card {
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .rank-info {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .rank-stats {
+        gap: 1rem;
+    }
+
+    .vote-buttons {
+        width: 100%;
+        justify-content: center;
     }
 }

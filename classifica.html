@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classifica Foto | Le più votate</title>
+    <meta name="description" content="Scopri la classifica delle foto più votate nella nostra galleria.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <a href="index.html" class="vote-btn" style="text-decoration: none;">
+                    <i data-lucide="arrow-left"></i> Galleria
+                </a>
+                <h1>Classifica</h1>
+                <div style="width: 100px;"></div>
+            </div>
+            <p class="subtitle">Le foto più amate dalla community</p>
+        </header>
+
+        <main id="ranking-container">
+            <div class="loading">Caricamento classifica...</div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+    <script src="classifica.js"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+
+</html>

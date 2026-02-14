@@ -69,14 +69,14 @@ async function uploadPhoto(file) {
         // 3. Inserisci record nel DB
         const { error: dbError } = await supabaseClient
             .from('photos')
-            .insert([{ url: publicUrl, name: file.name, votes: 0 }]);
+            .insert([{ url: publicUrl, name: file.name, votes: 0, likes: 0, dislikes: 0 }]);
 
         if (dbError) throw dbError;
 
-        statusDiv.innerHTML = `<p style="color: #4ade80;">Caricamento completato!</p>`;
+        statusDiv.innerHTML = `<p style="color: #4ade80;">✅ ${file.name} caricato con successo!</p>`;
     } catch (err) {
         console.error('Errore durante l\'upload:', err);
-        statusDiv.innerHTML = `<p style="color: #f43f5e;">Errore durante l'upload di ${file.name}</p>`;
+        statusDiv.innerHTML = `<p style="color: #f43f5e;">❌ Errore durante l'upload di ${file.name}</p>`;
     }
 }
 
@@ -89,26 +89,28 @@ async function loadResults() {
         const { data: photos, error } = await supabaseClient
             .from('photos')
             .select('*')
-            .order('votes', { ascending: false });
+            .order('likes', { ascending: false });
 
         if (error) throw error;
 
         resultsBody.innerHTML = '';
         photos.forEach(photo => {
+            const score = (photo.likes || 0) - (photo.dislikes || 0);
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td><img src="${photo.url}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px;"></td>
                 <td>${photo.name}</td>
-                <td><strong class="vote-count">${photo.votes}</strong></td>
+                <td><span style="color: #4ade80; font-weight: 700;">👍 ${photo.likes || 0}</span></td>
+                <td><span style="color: #f43f5e; font-weight: 700;">👎 ${photo.dislikes || 0}</span></td>
+                <td><strong style="color: ${score >= 0 ? '#4ade80' : '#f43f5e'};">${score >= 0 ? '+' : ''}${score}</strong></td>
                 <td>
-                    <button onclick="deletePhoto('${photo.id}', '${photo.url}')" style="background: none; border: none; color: #f43f5e; cursor: pointer;">
-                        <i data-lucide="trash-2"></i>
+                    <button onclick="deletePhoto('${photo.id}', '${photo.url}')" style="background: none; border: none; color: #f43f5e; cursor: pointer; font-size: 1.2rem;">
+                        🗑️
                     </button>
                 </td>
             `;
             resultsBody.appendChild(tr);
         });
-        lucide.createIcons();
     } catch (err) {
         console.error('Errore caricamento risultati:', err);
     }
@@ -118,13 +120,11 @@ async function deletePhoto(id, url) {
     if (!confirm('Sei sicuro di voler eliminare questa foto?')) return;
 
     try {
-        // Estrai il nome del file dall'URL
         const fileName = url.split('/').pop();
-
-        // 1. Elimina da Storage
         await supabaseClient.storage.from('photos').remove([fileName]);
 
-        // 2. Elimina dal DB
+        // Elimina anche i voti associati
+        await supabaseClient.from('user_votes').delete().eq('photo_id', id);
         const { error } = await supabaseClient.from('photos').delete().eq('id', id);
 
         if (error) throw error;

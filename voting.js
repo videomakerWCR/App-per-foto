@@ -10,10 +10,26 @@ if (enteredCode !== ACCESS_CODE) {
     localStorage.setItem('access_granted', ACCESS_CODE);
 }
 
+// Mappa locale dei voti dell'utente: { photoId: 'like' | 'dislike' | null }
+let userVotes = {};
+
+async function loadUserVotes() {
+    if (!supabaseClient) return;
+    try {
+        const { data, error } = await supabaseClient
+            .from('user_votes')
+            .select('photo_id, vote_type')
+            .eq('user_id', userId);
+        if (error) throw error;
+        data.forEach(v => { userVotes[v.photo_id] = v.vote_type; });
+    } catch (err) {
+        console.error('Errore caricamento voti utente:', err);
+    }
+}
+
 async function loadPhotos() {
     const container = document.getElementById('photo-container');
 
-    // Se Supabase non è configurato, usiamo dati di esempio
     if (!supabaseClient) {
         container.innerHTML = `
             <div style="grid-column: 1/-1; text-align: center; padding: 2rem;">
@@ -25,6 +41,9 @@ async function loadPhotos() {
     }
 
     try {
+        // Carica i voti dell'utente prima delle foto
+        await loadUserVotes();
+
         const { data: photos, error } = await supabaseClient
             .from('photos')
             .select('*')
@@ -35,76 +54,105 @@ async function loadPhotos() {
         container.innerHTML = '';
 
         if (photos.length === 0) {
-            container.innerHTML = '<p style="grid-column: 1/-1; text-align: center;">Nessuna foto presente. Caricale dalla pagina admin!</p>';
+            container.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: var(--text-muted);">Nessuna foto presente. Caricale dalla pagina admin!</p>';
             return;
         }
 
-        photos.forEach(photo => {
-            const card = createPhotoCard(photo);
+        photos.forEach((photo, index) => {
+            const card = createPhotoCard(photo, index);
             container.appendChild(card);
         });
+
+        lucide.createIcons();
     } catch (err) {
         console.error('Errore nel caricamento:', err);
         container.innerHTML = '<p>Errore nel caricamento delle foto.</p>';
     }
 }
 
-function createPhotoCard(photo) {
+function createPhotoCard(photo, index) {
     const div = document.createElement('div');
     div.className = 'photo-card';
+    div.id = `photo-${photo.id}`;
+    div.style.animationDelay = `${index * 0.1}s`;
 
-    // Controlla se l'utente ha già votato questa foto (localmente e nel DB)
-    const votedPhotos = JSON.parse(localStorage.getItem('voted_photos') || '[]');
-    const hasVoted = votedPhotos.includes(photo.id);
+    const currentVote = userVotes[photo.id] || null;
+    const likes = photo.likes || 0;
+    const dislikes = photo.dislikes || 0;
 
     div.innerHTML = `
-        <img src="${photo.url}" alt="Foto">
+        <img src="${photo.url}" alt="Foto" loading="lazy">
         <div class="photo-info">
-            <span class="vote-count">${photo.votes || 0} voti</span>
-            <button class="vote-btn ${hasVoted ? 'voted' : ''}" 
-                    onclick="handleVote('${photo.id}', this)" 
-                    ${hasVoted ? 'disabled' : ''}>
-                <i data-lucide="heart"></i>
-                ${hasVoted ? 'Votato' : 'Vota'}
-            </button>
+            <div class="vote-buttons">
+                <button class="vote-btn like-btn ${currentVote === 'like' ? 'active' : ''}" 
+                        onclick="handleVote('${photo.id}', 'like', this)"
+                        aria-label="Mi piace">
+                    <i data-lucide="thumbs-up"></i>
+                    <span class="like-count">${likes}</span>
+                </button>
+                <button class="vote-btn dislike-btn ${currentVote === 'dislike' ? 'active' : ''}" 
+                        onclick="handleVote('${photo.id}', 'dislike', this)"
+                        aria-label="Non mi piace">
+                    <i data-lucide="thumbs-down"></i>
+                    <span class="dislike-count">${dislikes}</span>
+                </button>
+            </div>
         </div>
     `;
-
-    // Inizializza l'icona Lucide appena creata
-    setTimeout(() => lucide.createIcons({ props: { "data-lucide": "heart" }, scope: div }), 0);
 
     return div;
 }
 
-async function handleVote(photoId, button) {
+async function handleVote(photoId, voteType, button) {
     if (!supabaseClient) return;
 
-    try {
-        // 1. Verifica lato client (già disabilitato via UI, ma per sicurezza)
-        const votedPhotos = JSON.parse(localStorage.getItem('voted_photos') || '[]');
-        if (votedPhotos.includes(photoId)) return;
+    // Previeni doppi click
+    const card = document.getElementById(`photo-${photoId}`);
+    const allBtns = card.querySelectorAll('.vote-btn');
+    allBtns.forEach(b => b.disabled = true);
 
-        // 2. Aggiorna DB (incremento atomico)
-        const { data, error } = await supabaseClient.rpc('increment_vote', { photo_id: photoId });
+    try {
+        const { data, error } = await supabaseClient.rpc('handle_vote', {
+            p_user_id: userId,
+            p_photo_id: photoId,
+            p_vote_type: voteType
+        });
 
         if (error) throw error;
 
-        // 3. Salva localmente per evitare voti multipli
-        votedPhotos.push(photoId);
-        localStorage.setItem('voted_photos', JSON.stringify(votedPhotos));
+        // Aggiorna i contatori istantaneamente
+        const likeBtn = card.querySelector('.like-btn');
+        const dislikeBtn = card.querySelector('.dislike-btn');
+        const likeCount = card.querySelector('.like-count');
+        const dislikeCount = card.querySelector('.dislike-count');
 
-        // 4. Update UI
-        button.classList.add('voted');
-        button.disabled = true;
-        button.innerHTML = '<i data-lucide="heart"></i> Votato';
-        lucide.createIcons();
+        likeCount.textContent = data.likes;
+        dislikeCount.textContent = data.dislikes;
 
-        // Ricarica i voti o aggiorna il contatore localmente
-        location.reload();
+        // Aggiorna lo stato dei pulsanti
+        const currentVote = userVotes[photoId];
+
+        if (currentVote === voteType) {
+            // Toggle off: l'utente ha cliccato lo stesso pulsante → rimuovi il voto
+            likeBtn.classList.remove('active');
+            dislikeBtn.classList.remove('active');
+            delete userVotes[photoId];
+        } else {
+            // Nuovo voto o cambio voto
+            likeBtn.classList.toggle('active', voteType === 'like');
+            dislikeBtn.classList.toggle('active', voteType === 'dislike');
+            userVotes[photoId] = voteType;
+        }
+
+        // Micro-animazione di feedback
+        button.classList.add('pulse');
+        setTimeout(() => button.classList.remove('pulse'), 300);
 
     } catch (err) {
         console.error('Errore nel voto:', err);
         notify('Errore durante la votazione. Riprova più tardi.');
+    } finally {
+        allBtns.forEach(b => b.disabled = false);
     }
 }
 
