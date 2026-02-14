@@ -1,6 +1,8 @@
 const dropZone = document.getElementById('drop-zone');
 const fileInput = document.getElementById('file-input');
 const resultsBody = document.getElementById('results-body');
+const selectAllCheckbox = document.getElementById('select-all');
+const deleteSelectedBtn = document.getElementById('delete-selected-btn');
 
 // Semplice protezione della pagina admin
 const ADMIN_PASSWORD = 'admin123'; // Cambiami!
@@ -136,7 +138,47 @@ async function uploadPhoto(file) {
     }
 }
 
-// --- Logica Risultati ---
+// --- Logica Risultati e Cancellazione Multipla ---
+
+// Event Listener per "Seleziona Tutti"
+selectAllCheckbox.addEventListener('change', (e) => {
+    const checkboxes = document.querySelectorAll('.photo-checkbox');
+    checkboxes.forEach(cb => cb.checked = e.target.checked);
+    updateDeleteButton();
+});
+
+// Event Listener per "Elimina Selezionate"
+deleteSelectedBtn.addEventListener('click', async () => {
+    const selected = document.querySelectorAll('.photo-checkbox:checked');
+    if (selected.length === 0) return;
+
+    if (!confirm(`Sei sicuro di voler eliminare ${selected.length} foto?`)) return;
+
+    deleteSelectedBtn.disabled = true;
+    deleteSelectedBtn.innerHTML = 'Eliminazione...';
+
+    for (const checkbox of selected) {
+        const id = checkbox.dataset.id;
+        const url = checkbox.dataset.url;
+        await deletePhoto(id, url, false); // false = no confirm, no reload
+    }
+
+    deleteSelectedBtn.disabled = false;
+    deleteSelectedBtn.innerHTML = '<i data-lucide="trash-2"></i> Elimina Selezionate';
+    selectAllCheckbox.checked = false;
+    loadResults();
+});
+
+function updateDeleteButton() {
+    const count = document.querySelectorAll('.photo-checkbox:checked').length;
+    if (count > 0) {
+        deleteSelectedBtn.style.display = 'flex';
+        deleteSelectedBtn.innerHTML = `<i data-lucide="trash-2"></i> Elimina ${count} Selezionate`;
+    } else {
+        deleteSelectedBtn.style.display = 'none';
+        selectAllCheckbox.checked = false;
+    }
+}
 
 async function loadResults() {
     if (!supabaseClient) return;
@@ -154,6 +196,7 @@ async function loadResults() {
             const score = (photo.likes || 0) - (photo.dislikes || 0);
             const tr = document.createElement('tr');
             tr.innerHTML = `
+                <td><input type="checkbox" class="photo-checkbox" data-id="${photo.id}" data-url="${photo.url}"></td>
                 <td><img src="${photo.url}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px;"></td>
                 <td>${photo.name}</td>
                 <td><span style="color: #4ade80; font-weight: 700;">👍 ${photo.likes || 0}</span></td>
@@ -167,13 +210,21 @@ async function loadResults() {
             `;
             resultsBody.appendChild(tr);
         });
+
+        // Aggiungi listener alle checkbox singole
+        document.querySelectorAll('.photo-checkbox').forEach(cb => {
+            cb.addEventListener('change', updateDeleteButton);
+        });
+
+        lucide.createIcons();
+        updateDeleteButton(); // Nascondi pulsante se lista vuota
     } catch (err) {
         console.error('Errore caricamento risultati:', err);
     }
 }
 
-async function deletePhoto(id, url) {
-    if (!confirm('Sei sicuro di voler eliminare questa foto?')) return;
+async function deletePhoto(id, url, askConfirm = true) {
+    if (askConfirm && !confirm('Sei sicuro di voler eliminare questa foto?')) return;
 
     try {
         const fileName = url.split('/').pop();
@@ -185,7 +236,9 @@ async function deletePhoto(id, url) {
 
         if (error) throw error;
 
-        loadResults();
+        if (error) throw error;
+
+        if (askConfirm) loadResults();
     } catch (err) {
         console.error('Errore eliminazione:', err);
     }

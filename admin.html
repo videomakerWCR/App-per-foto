@@ -37,10 +37,17 @@
         </section>
 
         <section id="results-section">
-            <h2>Classifica Voti</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2>Classifica Voti</h2>
+                <button id="delete-selected-btn" class="vote-btn"
+                    style="background: rgba(244, 63, 94, 0.2); border-color: #f43f5e; color: #f43f5e; display: none;">
+                    <i data-lucide="trash-2"></i> Elimina Selezionate
+                </button>
+            </div>
             <table class="results-table">
                 <thead>
                     <tr>
+                        <th><input type="checkbox" id="select-all"></th>
                         <th>Anteprima</th>
                         <th>Nome File</th>
                         <th>👍 Like</th>
