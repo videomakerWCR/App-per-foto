@@ -1,5 +1,5 @@
 // Semplice protezione della pagina principale per simulare un link "privato"
-const ACCESS_CODE = 'voto2026'; // CAMBIAMI con il codice che vuoi dare ai tuoi amici
+const ACCESS_CODE = 'voto2026'; // CAMBIAMI: Questa è la password per vedere il sito
 const enteredCode = localStorage.getItem('access_granted') || prompt('Inserisci il codice di accesso per vedere le foto:');
 
 if (enteredCode !== ACCESS_CODE) {
