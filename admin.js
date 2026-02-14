@@ -35,7 +35,7 @@ fileInput.addEventListener('change', (e) => {
 });
 
 async function handleFiles(files) {
-    if (!supabase) {
+    if (!supabaseClient) {
         notify('Configura Supabase in app.js per caricare le foto.');
         return;
     }
@@ -55,19 +55,19 @@ async function uploadPhoto(file) {
         statusDiv.innerHTML = `<p>Caricamento di ${file.name}...</p>`;
 
         // 1. Carica su Supabase Storage
-        const { data: storageData, error: storageError } = await supabase.storage
+        const { data: storageData, error: storageError } = await supabaseClient.storage
             .from('photos')
             .upload(fileName, file);
 
         if (storageError) throw storageError;
 
         // 2. Ottieni URL pubblico
-        const { data: { publicUrl } } = supabase.storage
+        const { data: { publicUrl } } = supabaseClient.storage
             .from('photos')
             .getPublicUrl(fileName);
 
         // 3. Inserisci record nel DB
-        const { error: dbError } = await supabase
+        const { error: dbError } = await supabaseClient
             .from('photos')
             .insert([{ url: publicUrl, name: file.name, votes: 0 }]);
 
@@ -83,10 +83,10 @@ async function uploadPhoto(file) {
 // --- Logica Risultati ---
 
 async function loadResults() {
-    if (!supabase) return;
+    if (!supabaseClient) return;
 
     try {
-        const { data: photos, error } = await supabase
+        const { data: photos, error } = await supabaseClient
             .from('photos')
             .select('*')
             .order('votes', { ascending: false });
@@ -122,10 +122,10 @@ async function deletePhoto(id, url) {
         const fileName = url.split('/').pop();
 
         // 1. Elimina da Storage
-        await supabase.storage.from('photos').remove([fileName]);
+        await supabaseClient.storage.from('photos').remove([fileName]);
 
         // 2. Elimina dal DB
-        const { error } = await supabase.from('photos').delete().eq('id', id);
+        const { error } = await supabaseClient.from('photos').delete().eq('id', id);
 
         if (error) throw error;
 

@@ -14,7 +14,7 @@ async function loadPhotos() {
     const container = document.getElementById('photo-container');
 
     // Se Supabase non è configurato, usiamo dati di esempio
-    if (!supabase) {
+    if (!supabaseClient) {
         container.innerHTML = `
             <div style="grid-column: 1/-1; text-align: center; padding: 2rem;">
                 <p>⚠️ Supabase non configurato. Configura <code>app.js</code> per vedere le foto reali.</p>
@@ -25,7 +25,7 @@ async function loadPhotos() {
     }
 
     try {
-        const { data: photos, error } = await supabase
+        const { data: photos, error } = await supabaseClient
             .from('photos')
             .select('*')
             .order('created_at', { ascending: false });
@@ -77,7 +77,7 @@ function createPhotoCard(photo) {
 }
 
 async function handleVote(photoId, button) {
-    if (!supabase) return;
+    if (!supabaseClient) return;
 
     try {
         // 1. Verifica lato client (già disabilitato via UI, ma per sicurezza)
@@ -85,7 +85,7 @@ async function handleVote(photoId, button) {
         if (votedPhotos.includes(photoId)) return;
 
         // 2. Aggiorna DB (incremento atomico)
-        const { data, error } = await supabase.rpc('increment_vote', { photo_id: photoId });
+        const { data, error } = await supabaseClient.rpc('increment_vote', { photo_id: photoId });
 
         if (error) throw error;
 
