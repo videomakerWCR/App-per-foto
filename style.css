@@ -155,20 +155,38 @@ body {
     }
 
     .lightbox img {
-        max-height: 70vh;
-        margin-bottom: 15vh;
+        max-height: 55vh;
+        /* Più spazio per i controlli */
+        margin-bottom: 25vh;
     }
 
     .lightbox-controls {
-        bottom: 10%;
+        bottom: 140px;
+        /* Fisso in pixel per evitare la barra browser */
         padding: 0.8rem 1.5rem;
-        gap: 1.5rem;
+        gap: 2rem;
     }
 
     .lightbox-btn {
-        width: 50px;
-        height: 50px;
-        font-size: 1.5rem;
+        width: 60px;
+        /* Più grandi per touch */
+        height: 60px;
+        font-size: 1.8rem;
+    }
+
+    /* Sposta la X in basso al centro per facile accesso */
+    .lightbox-close {
+        top: auto;
+        bottom: 40px;
+        right: auto;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 70px;
+        height: 70px;
+        font-size: 3rem;
+        line-height: 1;
+        background: rgba(255, 255, 255, 0.15);
+        border: 2px solid rgba(255, 255, 255, 0.1);
     }
 }
 
