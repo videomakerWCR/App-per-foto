@@ -155,11 +155,12 @@ body {
     }
 
     .lightbox img {
-        max-height: 80vh;
+        max-height: 70vh;
+        margin-bottom: 15vh;
     }
 
     .lightbox-controls {
-        bottom: 8vh;
+        bottom: 10%;
         padding: 0.8rem 1.5rem;
         gap: 1.5rem;
     }
