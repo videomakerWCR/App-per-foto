@@ -40,6 +40,9 @@ async function handleFiles(files) {
         return;
     }
 
+    const statusDiv = document.getElementById('upload-status');
+    statusDiv.innerHTML = ''; // Reset stati precedenti
+
     for (const file of files) {
         if (!file.type.startsWith('image/')) continue;
         await uploadPhoto(file);
@@ -47,17 +50,70 @@ async function handleFiles(files) {
     loadResults();
 }
 
+// Funzione per comprimere l'immagine
+function compressImage(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+
+                // Max dimensioni: 1920px (Full HD)
+                const MAX_WIDTH = 1920;
+                const MAX_HEIGHT = 1920;
+                let width = img.width;
+                let height = img.height;
+
+                if (width > height) {
+                    if (width > MAX_WIDTH) {
+                        height *= MAX_WIDTH / width;
+                        width = MAX_WIDTH;
+                    }
+                } else {
+                    if (height > MAX_HEIGHT) {
+                        width *= MAX_HEIGHT / height;
+                        height = MAX_HEIGHT;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                ctx.drawImage(img, 0, 0, width, height);
+
+                // Converti in WebP con qualità 0.8
+                canvas.toBlob((blob) => {
+                    resolve(blob);
+                }, 'image/webp', 0.8);
+            };
+            img.onerror = (err) => reject(err);
+        };
+        reader.onerror = (err) => reject(err);
+    });
+}
+
 async function uploadPhoto(file) {
     const statusDiv = document.getElementById('upload-status');
     const fileName = `${Date.now()}-${file.name}`;
 
     try {
-        statusDiv.innerHTML = `<p>Caricamento di ${file.name}...</p>`;
+        statusDiv.innerHTML = `<p>Compressione di ${file.name}...</p>`;
 
-        // 1. Carica su Supabase Storage
+        // 1. Comprimi l'immagine
+        const compressedBlob = await compressImage(file);
+        const fileName = `${Date.now()}-${file.name.replace(/\.[^/.]+$/, "")}.webp`; // Forza estensione .webp
+
+        statusDiv.innerHTML = `<p>Caricamento di ${fileName}...</p>`;
+
+        // 2. Carica su Supabase Storage
         const { data: storageData, error: storageError } = await supabaseClient.storage
             .from('photos')
-            .upload(fileName, file);
+            .upload(fileName, compressedBlob, {
+                contentType: 'image/webp'
+            });
 
         if (storageError) throw storageError;
 
