@@ -237,6 +237,8 @@ h1 {
     margin-bottom: 1rem;
     transition: all 0.3s ease;
     animation: fadeInUp 0.5s ease-out backwards;
+    overflow: hidden;
+    max-width: 100%;
 }
 
 .ranking-card:hover {
@@ -251,6 +253,7 @@ h1 {
     min-width: 60px;
     text-align: center;
     color: var(--text-muted);
+    flex-shrink: 0;
 }
 
 .rank-position.gold {
@@ -271,6 +274,8 @@ h1 {
 .rank-photo {
     width: 80px;
     height: 80px;
+    min-width: 80px;
+    max-width: 80px;
     object-fit: cover;
     border-radius: 14px;
     flex-shrink: 0;

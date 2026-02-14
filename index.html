@@ -18,7 +18,13 @@
 <body>
     <div class="container">
         <header>
-            <h1>Galleria Fotografica</h1>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="width: 44px;"></div>
+                <h1>Galleria Fotografica</h1>
+                <a href="admin.html" class="nav-link" title="Dashboard" style="opacity: 0.3;">
+                    <i data-lucide="settings"></i>
+                </a>
+            </div>
             <p class="subtitle">Scegli le tue foto preferite e lascia un voto!</p>
             <div class="nav-links">
                 <a href="classifica.html" class="nav-link">
@@ -32,9 +38,6 @@
             <div class="loading">Caricamento foto...</div>
         </main>
 
-        <footer style="margin-top: 4rem; opacity: 0.1; text-align: center;">
-            <a href="admin.html" style="color: inherit; text-decoration: none; font-size: 0.8rem;">Dashboard</a>
-        </footer>
     </div>
 
     <script src="app.js"></script>
