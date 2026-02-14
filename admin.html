@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Admin | Gestione Foto</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>Dashboard Admin</h1>
+            <p class="subtitle">Trascina le foto per caricarle e visualizza la classifica in tempo reale.</p>
+        </header>
+
+        <section id="upload-section">
+            <div id="drop-zone" class="upload-zone">
+                <i data-lucide="upload-cloud" class="upload-icon"></i>
+                <h3>Trascina qui le tue foto</h3>
+                <p>Oppure clicca per selezionarle dal computer</p>
+                <input type="file" id="file-input" multiple accept="image/*" style="display: none;">
+            </div>
+            <div id="upload-status"></div>
+        </section>
+
+        <section id="results-section">
+            <h2>Classifica Voti</h2>
+            <table class="results-table">
+                <thead>
+                    <tr>
+                        <th>Anteprima</th>
+                        <th>Nome File</th>
+                        <th>Voti</th>
+                        <th>Azioni</th>
+                    </tr>
+                </thead>
+                <tbody id="results-body">
+                    <!-- Results will be injected here -->
+                </tbody>
+            </table>
+        </section>
+    </div>
+
+    <script src="app.js"></script>
+    <script src="admin.js"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+
+</html>

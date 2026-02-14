@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Votazione Foto | Condividi e Vota</title>
+    <meta name="description" content="Vota le tue foto preferite in questa galleria interattiva.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <!-- Supabase JS Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>Galleria Fotografica</h1>
+            <p class="subtitle">Scegli le tue foto preferite e lascia un voto!</p>
+        </header>
+
+        <main id="photo-container" class="photo-grid">
+            <!-- Photos will be injected here -->
+            <div class="loading">Caricamento foto...</div>
+        </main>
+
+        <footer style="margin-top: 4rem; opacity: 0.1; text-align: center;">
+            <a href="admin.html" style="color: inherit; text-decoration: none; font-size: 0.8rem;">Dashboard</a>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+    <script src="voting.js"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+
+</html>
