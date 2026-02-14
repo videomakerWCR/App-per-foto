@@ -69,6 +69,108 @@ body {
     transform: scale(1);
 }
 
+/* Lightbox Navigation & Controls */
+.lightbox-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    font-size: 1.5rem;
+    transition: all 0.3s ease;
+    z-index: 10001;
+}
+
+.lightbox-nav:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.lightbox-prev {
+    left: 20px;
+}
+
+.lightbox-next {
+    right: 20px;
+}
+
+.lightbox-controls {
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 2rem;
+    z-index: 10001;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 1rem 2rem;
+    border-radius: 50px;
+    backdrop-filter: blur(10px);
+}
+
+.lightbox-btn {
+    background: transparent;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.8rem;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.lightbox-btn:hover {
+    transform: scale(1.1);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.lightbox-btn.active-like {
+    background: var(--like-color);
+    border-color: var(--like-color);
+    color: #0f172a;
+    box-shadow: 0 0 20px rgba(74, 222, 128, 0.4);
+}
+
+.lightbox-btn.active-dislike {
+    background: var(--dislike-color);
+    border-color: var(--dislike-color);
+    color: white;
+    box-shadow: 0 0 20px rgba(244, 63, 94, 0.4);
+}
+
+/* Hide navigation arrows on mobile (use swipe instead) */
+@media (max-width: 768px) {
+    .lightbox-nav {
+        display: none;
+    }
+
+    .lightbox img {
+        max-height: 80vh;
+    }
+
+    .lightbox-controls {
+        bottom: 8vh;
+        padding: 0.8rem 1.5rem;
+        gap: 1.5rem;
+    }
+
+    .lightbox-btn {
+        width: 50px;
+        height: 50px;
+        font-size: 1.5rem;
+    }
+}
+
 .lightbox-close {
     position: absolute;
     top: 20px;

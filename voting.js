@@ -12,6 +12,7 @@ if (enteredCode !== ACCESS_CODE) {
 
 // Mappa locale dei voti dell'utente: { photoId: 'like' | 'dislike' | null }
 let userVotes = {};
+window.userVotes = userVotes; // Esponi globalmente
 
 async function loadUserVotes() {
     if (!supabaseClient) return;
@@ -158,3 +159,6 @@ async function handleVote(photoId, voteType, button) {
 
 // Inizia il caricamento
 document.addEventListener('DOMContentLoaded', loadPhotos);
+
+// Esponi funzione di voto globalmente per la lightbox
+window.handleVote = handleVote;

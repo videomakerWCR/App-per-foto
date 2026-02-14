@@ -11,8 +11,6 @@ if (SUPABASE_URL !== 'YOUR_SUPABASE_URL' && SUPABASE_URL !== '') {
 }
 
 // Generatore di ID Univoco per il "voto per dispositivo"
-// Dato che non possiamo leggere l'indirizzo MAC dal browser, 
-// usiamo un ID salvato nel localStorage per identificare il dispositivo.
 function getUserId() {
     let userId = localStorage.getItem('vote_user_id');
     if (!userId) {
@@ -29,7 +27,11 @@ function notify(message, type = 'info') {
     alert(message); // Sostituibile con una UI più bella se necessario
 }
 
-// --- Lightbox Logic ---
+// --- Lightbox & Gallery Logic ---
+
+let currentGalleryImages = []; // Array of { src, id, element }
+let currentImageIndex = 0;
+
 function initLightbox() {
     // Crea elementi lightbox se non esistono
     if (!document.querySelector('.lightbox')) {
@@ -37,39 +39,101 @@ function initLightbox() {
         lightbox.className = 'lightbox';
         lightbox.innerHTML = `
             <div class="lightbox-close">&times;</div>
+            <div class="lightbox-nav lightbox-prev">&lt;</div>
+            <div class="lightbox-nav lightbox-next">&gt;</div>
             <img src="" alt="Full size photo">
+            <div class="lightbox-controls">
+                <button class="lightbox-btn lb-like-btn"><i data-lucide="thumbs-up"></i></button>
+                <button class="lightbox-btn lb-dislike-btn"><i data-lucide="thumbs-down"></i></button>
+            </div>
         `;
         document.body.appendChild(lightbox);
+        lucide.createIcons();
 
-        // Chiudi al click su sfondo o x
+        // Event Listeners
+        lightbox.querySelector('.lightbox-close').addEventListener('click', closeLightbox);
+        lightbox.querySelector('.lightbox-prev').addEventListener('click', (e) => { e.stopPropagation(); prevImage(); });
+        lightbox.querySelector('.lightbox-next').addEventListener('click', (e) => { e.stopPropagation(); nextImage(); });
+
+        // Chiudi al click su sfondo (ma non su img o controlli)
         lightbox.addEventListener('click', (e) => {
-            if (e.target !== lightbox.querySelector('img')) {
-                closeLightbox();
-            }
+            if (e.target === lightbox) closeLightbox();
+        });
+
+        // Swipe Gestures
+        let touchstartX = 0;
+        let touchendX = 0;
+        lightbox.addEventListener('touchstart', e => touchstartX = e.changedTouches[0].screenX);
+        lightbox.addEventListener('touchend', e => {
+            touchendX = e.changedTouches[0].screenX;
+            handleSwipe();
+        });
+
+        function handleSwipe() {
+            if (touchendX < touchstartX - 50) nextImage();
+            if (touchendX > touchstartX + 50) prevImage();
+        }
+
+        // Voting Buttons in Lightbox
+        const likeBtn = lightbox.querySelector('.lb-like-btn');
+        const dislikeBtn = lightbox.querySelector('.lb-dislike-btn');
+
+        likeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            handleLightboxVote('like');
+        });
+
+        dislikeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            handleLightboxVote('dislike');
         });
     }
 
     // Aggiungi listener a tutte le immagini delle card (delegation)
     document.addEventListener('click', (e) => {
-        if (e.target.tagName === 'IMG' && (e.target.closest('.photo-card') || e.target.closest('.ranking-card'))) {
-            openLightbox(e.target.src);
+        const img = e.target;
+        if (img.tagName === 'IMG' && (img.closest('.photo-card') || img.closest('.ranking-card'))) {
+            // Trova tutte le immagini della galleria corrente
+            const container = document.querySelector('.photo-grid') || document.querySelector('#ranking-container');
+            const images = Array.from(container.querySelectorAll('img'));
+
+            // Popola l'array globale
+            currentGalleryImages = images.map(img => {
+                const card = img.closest('.photo-card') || img.closest('.ranking-card');
+                // Estrai ID dalla card (photo-ID o niente) o dal dataset se presente
+                // Assumiamo che photo-card abbia id="photo-{uuid}"
+                let photoId = null;
+                if (card.id && card.id.startsWith('photo-')) {
+                    photoId = card.id.replace('photo-', '');
+                } else {
+                    // Fallback: prova a trovare il pulsante di voto e prendi l'ID da lì se possibile
+                    // Ma per ora ci affidiamo all'ID della card in voting.js
+                    // In classifica.js non abbiamo messo ID alla card, dovremo metterlo
+                    // Se non c'è ID, il voto non funzionerà
+                }
+                return { src: img.src, id: photoId, element: card };
+            });
+
+            currentImageIndex = images.indexOf(img);
+            openLightbox();
         }
     });
 
-    // Chiudi con ESC
+    // Navigazione tastiera
     document.addEventListener('keydown', (e) => {
+        if (!document.querySelector('.lightbox.active')) return;
         if (e.key === 'Escape') closeLightbox();
+        if (e.key === 'ArrowLeft') prevImage();
+        if (e.key === 'ArrowRight') nextImage();
     });
 }
 
-function openLightbox(src) {
+function openLightbox() {
     const lightbox = document.querySelector('.lightbox');
-    const img = lightbox.querySelector('img');
-    img.src = src;
+    updateLightboxContent();
     lightbox.style.display = 'flex';
-    // Timeout per attivare la transizione CSS
     setTimeout(() => lightbox.classList.add('active'), 10);
-    document.body.style.overflow = 'hidden'; // Blocca scroll pagina
+    document.body.style.overflow = 'hidden';
 }
 
 function closeLightbox() {
@@ -77,9 +141,80 @@ function closeLightbox() {
     lightbox.classList.remove('active');
     setTimeout(() => {
         lightbox.style.display = 'none';
-        lightbox.querySelector('img').src = '';
     }, 300);
-    document.body.style.overflow = ''; // Riattiva scroll
+    document.body.style.overflow = '';
+}
+
+function updateLightboxContent() {
+    const lightbox = document.querySelector('.lightbox');
+    const img = lightbox.querySelector('img');
+    const currentData = currentGalleryImages[currentImageIndex];
+
+    img.src = currentData.src;
+
+    // Aggiorna stato pulsanti voto (solo se siamo in pagina votazione e abbiamo ID)
+    const likeBtn = lightbox.querySelector('.lb-like-btn');
+    const dislikeBtn = lightbox.querySelector('.lb-dislike-btn');
+
+    // Reset pulsanti
+    likeBtn.classList.remove('active-like');
+    dislikeBtn.classList.remove('active-dislike');
+
+    // Controlla se siamo in voting page guardando i voti dell'utente
+    if (typeof userVotes !== 'undefined' && currentData.id) {
+        const userVote = userVotes[currentData.id];
+        if (userVote === 'like') likeBtn.classList.add('active-like');
+        if (userVote === 'dislike') dislikeBtn.classList.add('active-dislike');
+        lightbox.querySelector('.lightbox-controls').style.display = 'flex';
+    } else {
+        // Nascondi controlli se non è possibile votare (es. classifica senza ID o logica voti)
+        // Ma l'utente ha chiesto voti anche a schermo intero. In classifica.js non abbiamo logica voto.
+        // Se siamo in classifica, nascondiamo i pulsanti per ora, o implementiamo il voto globale.
+        // Dalla richiesta: "in schemo interi si aggiungono i tasti per votare".
+        // Assumo che funzioni dove il voto è già possibile (voting page).
+        if (typeof userVotes === 'undefined') {
+            lightbox.querySelector('.lightbox-controls').style.display = 'none';
+        } else {
+            lightbox.querySelector('.lightbox-controls').style.display = 'flex';
+        }
+    }
+}
+
+function prevImage() {
+    if (currentImageIndex > 0) {
+        currentImageIndex--;
+        updateLightboxContent();
+    } else {
+        // Loop? O stop? Facciamo loop
+        currentImageIndex = currentGalleryImages.length - 1;
+        updateLightboxContent();
+    }
+}
+
+function nextImage() {
+    if (currentImageIndex < currentGalleryImages.length - 1) {
+        currentImageIndex++;
+        updateLightboxContent();
+    } else {
+        currentImageIndex = 0;
+        updateLightboxContent();
+    }
+}
+
+async function handleLightboxVote(type) {
+    const currentData = currentGalleryImages[currentImageIndex]; // { src, id, element }
+    if (!currentData.id || typeof handleVote !== 'function') return;
+
+    // Trova il pulsante corrispondente nella card originale per passarlo a handleVote (che si aspetta un button per animazioni)
+    // O passiamo null e modifichiamo handleVote per gestire null buttons
+    const card = currentData.element;
+    const originalBtn = card.querySelector(`.${type}-btn`);
+
+    // Chiamiamo la funzione di voto esistente
+    await handleVote(currentData.id, type, originalBtn || document.createElement('button'));
+
+    // Aggiorniamo la UI della lightbox manualmente dopo il voto
+    updateLightboxContent();
 }
 
 document.addEventListener('DOMContentLoaded', initLightbox);
