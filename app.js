@@ -28,3 +28,58 @@ const userId = getUserId();
 function notify(message, type = 'info') {
     alert(message); // Sostituibile con una UI più bella se necessario
 }
+
+// --- Lightbox Logic ---
+function initLightbox() {
+    // Crea elementi lightbox se non esistono
+    if (!document.querySelector('.lightbox')) {
+        const lightbox = document.createElement('div');
+        lightbox.className = 'lightbox';
+        lightbox.innerHTML = `
+            <div class="lightbox-close">&times;</div>
+            <img src="" alt="Full size photo">
+        `;
+        document.body.appendChild(lightbox);
+
+        // Chiudi al click su sfondo o x
+        lightbox.addEventListener('click', (e) => {
+            if (e.target !== lightbox.querySelector('img')) {
+                closeLightbox();
+            }
+        });
+    }
+
+    // Aggiungi listener a tutte le immagini delle card (delegation)
+    document.addEventListener('click', (e) => {
+        if (e.target.tagName === 'IMG' && (e.target.closest('.photo-card') || e.target.closest('.ranking-card'))) {
+            openLightbox(e.target.src);
+        }
+    });
+
+    // Chiudi con ESC
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeLightbox();
+    });
+}
+
+function openLightbox(src) {
+    const lightbox = document.querySelector('.lightbox');
+    const img = lightbox.querySelector('img');
+    img.src = src;
+    lightbox.style.display = 'flex';
+    // Timeout per attivare la transizione CSS
+    setTimeout(() => lightbox.classList.add('active'), 10);
+    document.body.style.overflow = 'hidden'; // Blocca scroll pagina
+}
+
+function closeLightbox() {
+    const lightbox = document.querySelector('.lightbox');
+    lightbox.classList.remove('active');
+    setTimeout(() => {
+        lightbox.style.display = 'none';
+        lightbox.querySelector('img').src = '';
+    }, 300);
+    document.body.style.overflow = ''; // Riattiva scroll
+}
+
+document.addEventListener('DOMContentLoaded', initLightbox);
