@@ -16,12 +16,18 @@ async function loadRanking() {
     }
 
     try {
-        const { data: photos, error } = await supabaseClient
+        let { data: photos, error } = await supabaseClient
             .from('photos')
-            .select('*')
-            .order('likes', { ascending: false });
+            .select('*');
 
         if (error) throw error;
+
+        // Ordina lato client per punteggio (likes - dislikes)
+        photos.sort((a, b) => {
+            const scoreA = (a.likes || 0) - (a.dislikes || 0);
+            const scoreB = (b.likes || 0) - (b.dislikes || 0);
+            return scoreB - scoreA;
+        });
 
         container.innerHTML = '';
 
