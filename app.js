@@ -32,19 +32,32 @@ function notify(message, type = 'info') {
 
 // --- Auth Logic ---
 
+let authPromise = null;
+
 async function checkAuth(type) {
     const isGranted = sessionStorage.getItem(`auth_${type}`);
     if (isGranted) return true;
 
-    return new Promise((resolve) => {
-        showAuthModal(type, resolve);
+    if (authPromise) return authPromise;
+
+    authPromise = new Promise((resolve) => {
+        showAuthModal(type, (result) => {
+            authPromise = null;
+            resolve(result);
+        });
     });
+
+    return authPromise;
 }
 
 function showAuthModal(type, callback) {
-    // Rimuovi eventuali modal esistenti
+    // Se esiste già un modal, portalo in primo piano e non ricrearlo
     const existing = document.querySelector('.auth-overlay');
-    if (existing) existing.remove();
+    if (existing) {
+        const input = existing.querySelector('input');
+        if (input) input.focus();
+        return;
+    }
 
     const overlay = document.createElement('div');
     overlay.className = 'auth-overlay';
