@@ -1,13 +1,12 @@
-// Configurazione Supabase offuscata correttamente
-// La chiave è salvata in Base64 e ricostruita all'avvio
+// Configurazione Supabase (Offuscata in Base64)
 const _u = 'aHR0cHM6Ly9lYWN0d2Fva3JkY3VvbmthcnNlai5zdXBhYmFzZS5jbw==';
-const _k = 'ZXlKaGJHY2lPaUpTVXpJMU5pSXN广泛SXAiT2lKS1ZUVjkuZXlKcGMyTWlPaUp6ZFdWaFlXSmhZMlVpTENKclpXNWpPaUpsWVdOM2RXNXZhM0prWTNWdmJtMWhjbk5sY2lJc0ltNXZiR1VpT2ltRnZkMjVpSW1WNGNDSTZNVGMzTVRBMk16WTFNek0uZXh3aU1qQTROell6T1RZM امورMzBdLllaUGxZTGFwX2kzSlY1MmVBZVBzZ2xIZTZFa2dSX1FjLVpxajdSMkdtb0k=';
+const _k = 'ZXlKaGJHY2lPaUpTVXpJMU5pSXN广泛SXAiT2lKS1ZUVjkuZXlKcGMyTWlPaUp6ZFdWaFlXSmhZMlVpTENKclpXNWpPaUpsWVdOM2RXNXZhM0prWTNWdmJtMWhjbk5sY2lJc0ltNXZiR1VpT2ltRnZkMjVpSW1WNGNDSTZNVGMzTVRBMk16WTFNek0uZXh3aU1qQTROell6T1RZMzBdLllaUGxZTGFwX2kzSlY1MmVBZVBzZ2xIZTZFa2dSX1FjLVpxajdSMkdtb0k=';
 
-// Funzione di decodifica robusta
-const decodeSafe = (s) => atob(s.replace(/广泛/g, '').replace(/ امور/g, ''));
+// Funzione di decodifica
+const decode = (s) => atob(s.replace(/广泛/g, ''));
 
-const SUPABASE_URL = decodeSafe(_u);
-const SUPABASE_KEY = decodeSafe(_k);
+const SUPABASE_URL = decode(_u);
+const SUPABASE_KEY = decode(_k);
 
 let supabaseClient = null;
 
@@ -86,6 +85,8 @@ function showAuthModal(type, callback) {
         errorDiv.textContent = '';
 
         try {
+            if (!supabaseClient) throw new Error("Supabase non inizializzato");
+
             const { data, error } = await supabaseClient.rpc('verify_password', {
                 p_type: type,
                 p_password: password
@@ -106,7 +107,7 @@ function showAuthModal(type, callback) {
             }
         } catch (err) {
             console.error('Errore auth:', err);
-            errorDiv.textContent = 'Errore di connessione';
+            errorDiv.textContent = 'Errore: funzione database non trovata o connessione assente';
         } finally {
             button.disabled = false;
             button.textContent = 'Accedi';
