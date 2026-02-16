@@ -239,20 +239,25 @@ async function deletePhoto(id, url, askConfirm = true) {
     if (askConfirm && !confirm('Sei sicuro di voler eliminare questa foto?')) return;
 
     try {
+        // Recupera la password dalla sessione (salvata quando l'admin ha fatto login)
+        const adminPass = sessionStorage.getItem('auth_admin_pass'); // Dobbiamo salvarla nel login
+
+        // 1. Chiamata RPC sicura: solo il database può cancellare se riceve la password corretta
+        const { error: rpcError } = await supabaseClient.rpc('delete_photo_secure', {
+            p_photo_id: id,
+            p_admin_password: adminPass
+        });
+
+        if (rpcError) throw rpcError;
+
+        // 2. Elimina il file fisico dallo storage
         const fileName = url.split('/').pop();
         await supabaseClient.storage.from('photos').remove([fileName]);
-
-        // Elimina anche i voti associati
-        await supabaseClient.from('user_votes').delete().eq('photo_id', id);
-        const { error } = await supabaseClient.from('photos').delete().eq('id', id);
-
-        if (error) throw error;
-
-        if (error) throw error;
 
         if (askConfirm) loadResults();
     } catch (err) {
         console.error('Errore eliminazione:', err);
+        notify('Errore durante l\'eliminazione: ' + err.message);
     }
 }
 

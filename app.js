@@ -1,12 +1,13 @@
-// Configurazione Supabase - L'utente dovrà inserire i propri dati qui
-const SUPABASE_URL = 'https://eactwaokrdcuonkarsej.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVhY3R3YW9rcmRjdW9ua2Fyc2VqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEwNjM2NTMsImV4cCI6MjA4NjYzOTY1M30.yXPlYLap_i3JV52eAePsglHe6EkgR_Qc-Zqj7R2GmoI';
+// Configurazione Supabase offuscata (Base64) per protezione base dai bot
+const _u = 'aHR0cHM6Ly9lYWN0d2Fva3JkY3VvbmthcnNlai5zdXBhYmFzZS5jbw==';
+const _k = 'ZXlKaGJHY2lPaUpTVXpJMU5pSXN广泛SXAiT2lKS1ZUVjkuZXlKcGMyTWlPaUp6ZFdWaFlXSmhZMlVpTENKclpXNWpPaUpsWVdOM2RXNXZhM0prWTNWdmJtMWhjbk5sY2lJc0ltNXZiR1VpT2ltRnZkMjVpSW1WNGNDSTZNVGMzTVRBMk16WTFNek0uZXh3aU1qQTROell6T1RZM امورMzBdLllaUGxZTGFwX2kzSlY1MmVBZVBzZ2xIZTZFa2dSX1FjLVpxajdSMkdtb0k=';
+
+const SUPABASE_URL = atob(_u);
+const SUPABASE_KEY = atob('ZXlKaGJHY2lPaUpTVXpJMU5pSXN广泛SXAiT2lKS1ZUVjkuZXlKcGMyTWlPaUp6ZFdWaFlXSmhZMlVpTENKclpXNWpPaUpsWVdOM2RXNXZhM0prWTNWdmJtMWhjbk5sY2lJc0ltNXZiR1VpT2ltRnZkMjVpSW1WNGNDSTZNVGMzTVRBMk16WTFNek0uZXh3aU1qQTROell6T1RZM امورMzBdLllaUGxZTGFwX2kzSlY1MmVBZVBzZ2xIZTZFa2dSX1FjLVpxajdSMkdtb0k='.replace(/广泛/g, '').replace(/ امور/g, '')); // Ricostruita per evitare scraping diretto
 
 let supabaseClient = null;
 
-// Inizializza Supabase se le chiavi sono presenti
-if (SUPABASE_URL !== 'YOUR_SUPABASE_URL' && SUPABASE_URL !== '') {
-    // Usiamo il comando corretto per creare la connessione
+if (SUPABASE_URL) {
     supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 }
 
@@ -85,6 +86,8 @@ function showAuthModal(type, callback) {
 
             if (data === true) {
                 sessionStorage.setItem(`auth_${type}`, 'true');
+                // Salva la password per le operazioni sicure (RPC)
+                sessionStorage.setItem(`auth_${type}_pass`, password);
                 overlay.remove();
                 callback(true);
             } else {
