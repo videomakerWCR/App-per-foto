@@ -32,10 +32,12 @@ async function loadUserVotes() {
 let currentPage = 0;
 const PAGE_SIZE = 12;
 let hasMorePhotos = true;
+let isLoading = false;
 
 async function loadPhotos(isLoadMore = false) {
+    if (isLoading) return; // Evita chiamate multiple
+
     const container = document.getElementById('photo-container');
-    const loadMoreBtn = document.getElementById('load-more-btn');
 
     if (!supabaseClient) {
         container.innerHTML = `
@@ -47,6 +49,8 @@ async function loadPhotos(isLoadMore = false) {
         return;
     }
 
+    isLoading = true;
+
     try {
         // Carica i voti dell'utente solo la prima volta
         if (!isLoadMore) {
@@ -54,12 +58,22 @@ async function loadPhotos(isLoadMore = false) {
             container.innerHTML = '';
             currentPage = 0;
             hasMorePhotos = true;
+
+            // Reset observer se necessario
+            if (observer) {
+                observer.disconnect();
+                observer = null;
+            }
         }
 
-        if (!hasMorePhotos) return;
+        if (!hasMorePhotos) {
+            isLoading = false;
+            return;
+        }
 
-        // Mostra loader o stato
-        if (loadMoreBtn) loadMoreBtn.innerText = 'Caricamento...';
+        // Mostra loader nella sentinella
+        const sentinel = document.getElementById('scroll-sentinel');
+        if (sentinel) sentinel.innerHTML = '<div class="loading" style="font-size: 0.9rem;">Caricamento altre foto...</div>';
 
         const from = currentPage * PAGE_SIZE;
         const to = from + PAGE_SIZE - 1;
@@ -86,41 +100,67 @@ async function loadPhotos(isLoadMore = false) {
             container.appendChild(card);
         });
 
-        // Gestione pulsante "Carica Altro"
-        updateLoadMoreButton();
-
         currentPage++;
         lucide.createIcons();
+
+        // Configura observer dopo aver aggiunto elementi
+        if (hasMorePhotos) setupInfiniteScroll();
 
     } catch (err) {
         console.error('Errore nel caricamento:', err);
         if (!isLoadMore) container.innerHTML = '<p>Errore nel caricamento delle foto.</p>';
         notify('Errore caricamento foto');
     } finally {
-        if (loadMoreBtn) loadMoreBtn.innerText = 'Carica altre foto';
+        isLoading = false;
+        // Pulisci il testo della sentinella
+        const sentinel = document.getElementById('scroll-sentinel');
+        if (sentinel) sentinel.innerHTML = '';
+
+        // Se abbiamo finito le foto, rimuovi la sentinella
+        if (!hasMorePhotos && sentinel) {
+            sentinel.remove();
+            if (observer) observer.disconnect();
+        }
     }
 }
 
-function updateLoadMoreButton() {
-    let btn = document.getElementById('load-more-btn');
-    if (!hasMorePhotos) {
-        if (btn) btn.style.display = 'none';
-        return;
+let observer = null;
+
+function setupInfiniteScroll() {
+    let sentinel = document.getElementById('scroll-sentinel');
+
+    // Crea la sentinella se non esiste
+    if (!sentinel) {
+        sentinel = document.createElement('div');
+        sentinel.id = 'scroll-sentinel';
+        // Style invisibile ma presente per il trigger
+        sentinel.style.height = '100px';
+        sentinel.style.width = '100%';
+        sentinel.style.margin = '20px 0';
+        sentinel.style.display = 'flex';
+        sentinel.style.justifyContent = 'center';
+        sentinel.style.alignItems = 'center';
+        sentinel.style.color = 'var(--text-muted)';
+
+        const container = document.querySelector('.container');
+        // Prova a inserirlo prima del footer, se esiste
+        const footer = document.querySelector('footer');
+        if (footer) {
+            container.insertBefore(sentinel, footer);
+        } else {
+            container.appendChild(sentinel);
+        }
     }
 
-    if (!btn) {
-        const container = document.querySelector('.container');
-        btn = document.createElement('button');
-        btn.id = 'load-more-btn';
-        btn.className = 'vote-btn';
-        btn.style.margin = '2rem auto';
-        btn.style.display = 'block';
-        btn.innerHTML = `<i data-lucide="plus-circle"></i> Carica altre foto`;
-        btn.onclick = () => loadPhotos(true);
-        // Inserisci dopo il container delle foto, prima del footer
-        container.insertBefore(btn, document.querySelector('footer'));
-    } else {
-        btn.style.display = 'block';
+    if (!observer) {
+        observer = new IntersectionObserver((entries) => {
+            // Carica solo se visibile, ci sono foto e non sta già caricando
+            if (entries[0].isIntersecting && hasMorePhotos && !isLoading) {
+                loadPhotos(true);
+            }
+        }, { rootMargin: '400px' }); // Precarica 400px prima della fine
+
+        observer.observe(sentinel);
     }
 }
 
