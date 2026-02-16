@@ -1,13 +1,15 @@
-// Configurazione Supabase offuscata (Base64) per protezione base dai bot
+// Configurazione Supabase offuscata per sicurezza base
 const _u = 'aHR0cHM6Ly9lYWN0d2Fva3JkY3VvbmthcnNlai5zdXBhYmFzZS5jbw==';
 const _k = 'ZXlKaGJHY2lPaUpTVXpJMU5pSXN广泛SXAiT2lKS1ZUVjkuZXlKcGMyTWlPaUp6ZFdWaFlXSmhZMlVpTENKclpXNWpPaUpsWVdOM2RXNXZhM0prWTNWdmJtMWhjbk5sY2lJc0ltNXZiR1VpT2ltRnZkMjVpSW1WNGNDSTZNVGMzTVRBMk16WTFNek0uZXh3aU1qQTROell6T1RZM امورMzBdLllaUGxZTGFwX2kzSlY1MmVBZVBzZ2xIZTZFa2dSX1FjLVpxajdSMkdtb0k=';
 
-const SUPABASE_URL = atob(_u);
-const SUPABASE_KEY = atob('ZXlKaGJHY2lPaUpTVXpJMU5pSXN广泛SXAiT2lKS1ZUVjkuZXlKcGMyTWlPaUp6ZFdWaFlXSmhZMlVpTENKclpXNWpPaUpsWVdOM2RXNXZhM0prWTNWdmJtMWhjbk5sY2lJc0ltNXZiR1VpT2ltRnZkMjVpSW1WNGNDSTZNVGMzTVRBMk16WTFNek0uZXh3aU1qQTROell6T1RZM امورMzBdLllaUGxZTGFwX2kzSlY1MmVBZVBzZ2xIZTZFa2dSX1FjLVpxajdSMkdtb0k='.replace(/广泛/g, '').replace(/ امور/g, '')); // Ricostruita per evitare scraping diretto
+// Funzione di decodifica sicura
+const decode = (s) => atob(s.replace(/广泛/g, '').replace(/ امور/g, ''));
+
+const SUPABASE_URL = decode(_u);
+const SUPABASE_KEY = decode(_k);
 
 let supabaseClient = null;
-
-if (SUPABASE_URL) {
+if (supabase && SUPABASE_URL) {
     supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 }
 
