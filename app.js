@@ -81,12 +81,36 @@ function showAuthModal(type, callback) {
         try {
             if (!supabaseClient) throw new Error("Supabase non inizializzato");
 
+            // Verifica connessione base
+            const { error: pingError } = await supabaseClient.from('photos').select('id').limit(1);
+            if (pingError) {
+                console.warn("Errore connessione DB:", pingError);
+                throw new Error("Impossibile connettersi al database");
+            }
+
             const { data, error } = await supabaseClient.rpc('verify_password', {
                 p_type: type,
                 p_password: password
             });
 
-            if (error) throw error;
+            if (error) {
+                console.error("Errore RPC:", error);
+                // Tentativo fallback con nomi parametri diversi se il primo fallisce
+                if (error.code === '42883') { // Undefined function
+                    const { data: data2, error: error2 } = await supabaseClient.rpc('verify_password', {
+                        type: type,
+                        password: password
+                    });
+                    if (!error2 && data2 === true) {
+                        sessionStorage.setItem(`auth_${type}`, 'true');
+                        sessionStorage.setItem(`auth_${type}_pass`, password);
+                        overlay.remove();
+                        callback(true);
+                        return;
+                    }
+                }
+                throw error;
+            }
 
             if (data === true) {
                 sessionStorage.setItem(`auth_${type}`, 'true');
