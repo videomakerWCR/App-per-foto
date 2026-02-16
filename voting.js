@@ -29,8 +29,13 @@ async function loadUserVotes() {
     }
 }
 
-async function loadPhotos() {
+let currentPage = 0;
+const PAGE_SIZE = 12;
+let hasMorePhotos = true;
+
+async function loadPhotos(isLoadMore = false) {
     const container = document.getElementById('photo-container');
+    const loadMoreBtn = document.getElementById('load-more-btn');
 
     if (!supabaseClient) {
         container.innerHTML = `
@@ -43,19 +48,35 @@ async function loadPhotos() {
     }
 
     try {
-        // Carica i voti dell'utente prima delle foto
-        await loadUserVotes();
+        // Carica i voti dell'utente solo la prima volta
+        if (!isLoadMore) {
+            await loadUserVotes();
+            container.innerHTML = '';
+            currentPage = 0;
+            hasMorePhotos = true;
+        }
+
+        if (!hasMorePhotos) return;
+
+        // Mostra loader o stato
+        if (loadMoreBtn) loadMoreBtn.innerText = 'Caricamento...';
+
+        const from = currentPage * PAGE_SIZE;
+        const to = from + PAGE_SIZE - 1;
 
         const { data: photos, error } = await supabaseClient
             .from('photos')
             .select('*')
-            .order('created_at', { ascending: false });
+            .order('created_at', { ascending: false })
+            .range(from, to);
 
         if (error) throw error;
 
-        container.innerHTML = '';
+        if (photos.length < PAGE_SIZE) {
+            hasMorePhotos = false;
+        }
 
-        if (photos.length === 0) {
+        if (photos.length === 0 && !isLoadMore) {
             container.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: var(--text-muted);">Nessuna foto presente. Caricale dalla pagina admin!</p>';
             return;
         }
@@ -65,10 +86,41 @@ async function loadPhotos() {
             container.appendChild(card);
         });
 
+        // Gestione pulsante "Carica Altro"
+        updateLoadMoreButton();
+
+        currentPage++;
         lucide.createIcons();
+
     } catch (err) {
         console.error('Errore nel caricamento:', err);
-        container.innerHTML = '<p>Errore nel caricamento delle foto.</p>';
+        if (!isLoadMore) container.innerHTML = '<p>Errore nel caricamento delle foto.</p>';
+        notify('Errore caricamento foto');
+    } finally {
+        if (loadMoreBtn) loadMoreBtn.innerText = 'Carica altre foto';
+    }
+}
+
+function updateLoadMoreButton() {
+    let btn = document.getElementById('load-more-btn');
+    if (!hasMorePhotos) {
+        if (btn) btn.style.display = 'none';
+        return;
+    }
+
+    if (!btn) {
+        const container = document.querySelector('.container');
+        btn = document.createElement('button');
+        btn.id = 'load-more-btn';
+        btn.className = 'vote-btn';
+        btn.style.margin = '2rem auto';
+        btn.style.display = 'block';
+        btn.innerHTML = `<i data-lucide="plus-circle"></i> Carica altre foto`;
+        btn.onclick = () => loadPhotos(true);
+        // Inserisci dopo il container delle foto, prima del footer
+        container.insertBefore(btn, document.querySelector('footer'));
+    } else {
+        btn.style.display = 'block';
     }
 }
 
