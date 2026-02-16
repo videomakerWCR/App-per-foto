@@ -80,7 +80,8 @@ async function loadPhotos(isLoadMore = false) {
 
         const { data: photos, error } = await supabaseClient
             .from('photos')
-            .select('*')
+            .select('*, sessions!inner(is_active)')
+            .eq('sessions.is_active', true)
             .order('created_at', { ascending: false })
             .range(from, to);
 

@@ -24,6 +24,28 @@
                 <div style="width: 80px;"></div> <!-- Spacer per centrare il titolo -->
             </div>
             <p class="subtitle">Trascina le foto per caricarle e visualizza la classifica in tempo reale.</p>
+
+            <!-- Gestione Sessioni -->
+            <div class="session-control"
+                style="background: rgba(255, 255, 255, 0.05); padding: 1rem; border-radius: 12px; margin-top: 1rem; border: 1px solid var(--glass-border); display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                <div>
+                    <label for="session-select" style="font-weight: 600; margin-right: 0.5rem;">Sessione:</label>
+                    <select id="session-select" class="vote-btn"
+                        style="padding: 0.5rem; background: rgba(0,0,0,0.3); color: white; border: 1px solid var(--glass-border);">
+                        <!-- Options caricate via JS -->
+                    </select>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button id="activate-session-btn" class="vote-btn"
+                        style="background: rgba(74, 222, 128, 0.2); border-color: #4ade80; color: #4ade80;"
+                        title="Rendi questa sessione pubblica">
+                        <i data-lucide="power"></i> Attiva
+                    </button>
+                    <button id="new-session-btn" class="vote-btn" title="Crea nuova sessione vuota">
+                        <i data-lucide="plus"></i> Nuova
+                    </button>
+                </div>
+            </div>
         </header>
 
         <section id="upload-section">

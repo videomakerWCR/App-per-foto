@@ -18,7 +18,8 @@ async function loadRanking() {
     try {
         let { data: photos, error } = await supabaseClient
             .from('photos')
-            .select('*');
+            .select('*, sessions!inner(is_active)')
+            .eq('sessions.is_active', true);
 
         if (error) throw error;
 

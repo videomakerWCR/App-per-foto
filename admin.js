@@ -6,17 +6,100 @@ const deleteSelectedBtn = document.getElementById('delete-selected-btn');
 
 // La protezione della pagina ora è gestita tramite Supabase RPC
 
+let currentSessionId = 1;
+
 document.addEventListener('DOMContentLoaded', async () => {
     const isAuthorized = await checkAuth('admin');
     if (isAuthorized) {
-        // Rendi visibile il contenuto della pagina
         const mainContainer = document.querySelector('.container');
         if (mainContainer) mainContainer.classList.remove('page-hidden');
+
+        // Carica le sessioni e poi i risultati
+        await loadSessions();
         loadResults();
     } else {
         window.location.href = 'index.html';
     }
 });
+
+// --- Gestione Sessioni ---
+const sessionSelect = document.getElementById('session-select');
+const newSessionBtn = document.getElementById('new-session-btn');
+const activateSessionBtn = document.getElementById('activate-session-btn');
+
+sessionSelect.addEventListener('change', (e) => {
+    currentSessionId = parseInt(e.target.value);
+    loadResults();
+});
+
+newSessionBtn.addEventListener('click', async () => {
+    const name = prompt("Nome della nuova sessione:");
+    if (!name) return;
+
+    try {
+        const adminPass = sessionStorage.getItem('auth_admin_pass');
+        const { error } = await supabaseClient.rpc('create_session', {
+            p_name: name,
+            p_admin_password: adminPass
+        });
+
+        if (error) throw error;
+        notify("Sessione creata!");
+        loadSessions(); // Ricarica lista
+    } catch (err) {
+        console.error(err);
+        notify("Errore creazione sessione: " + err.message);
+    }
+});
+
+activateSessionBtn.addEventListener('click', async () => {
+    if (!confirm("Vuoi rendere questa sessione PUBBLICA? Le altre verranno nascoste.")) return;
+
+    try {
+        const adminPass = sessionStorage.getItem('auth_admin_pass');
+        const { error } = await supabaseClient.rpc('activate_session', {
+            p_session_id: currentSessionId,
+            p_admin_password: adminPass
+        });
+
+        if (error) throw error;
+        notify("Sessione Attivata!");
+        loadSessions(); // Aggiorna UI attiva/inattiva
+    } catch (err) {
+        console.error(err);
+        notify("Errore attivazione: " + err.message);
+    }
+});
+
+async function loadSessions() {
+    if (!supabaseClient) return;
+
+    const { data: sessions, error } = await supabaseClient
+        .from('sessions')
+        .select('*')
+        .order('id', { ascending: false });
+
+    if (error) {
+        console.error("Errore loading sessions:", error);
+        return;
+    }
+
+    sessionSelect.innerHTML = '';
+    sessions.forEach(s => {
+        const option = document.createElement('option');
+        option.value = s.id;
+        option.text = `${s.name} ${s.is_active ? '(ATTIVA)' : ''}`;
+        sessionSelect.appendChild(option);
+
+        // Seleziona la prima se non c'è una selezione corrente, o ricarica quella corrente
+        if (s.is_active && !currentSessionId) currentSessionId = s.id;
+    });
+
+    // Se currentSessionId non è stato settato (nessuna attiva?), prendi la più recente
+    if (!currentSessionId && sessions.length > 0) currentSessionId = sessions[0].id;
+
+    sessionSelect.value = currentSessionId;
+}
 
 // --- Logica Upload ---
 
@@ -133,7 +216,14 @@ async function uploadPhoto(file) {
         // 3. Inserisci record nel DB
         const { error: dbError } = await supabaseClient
             .from('photos')
-            .insert([{ url: publicUrl, name: file.name, votes: 0, likes: 0, dislikes: 0 }]);
+            .insert([{
+                url: publicUrl,
+                name: file.name,
+                votes: 0,
+                likes: 0,
+                dislikes: 0,
+                session_id: currentSessionId // Associa alla sessione corrente
+            }]);
 
         if (dbError) throw dbError;
 
@@ -187,12 +277,13 @@ function updateDeleteButton() {
 }
 
 async function loadResults() {
-    if (!supabaseClient) return;
+    if (!supabaseClient || !currentSessionId) return;
 
     try {
         let { data: photos, error } = await supabaseClient
             .from('photos')
-            .select('*');
+            .select('*')
+            .eq('session_id', currentSessionId); // Filtra per sessione CORRENTE (anche se inattiva)
 
         if (error) throw error;
 
@@ -260,5 +351,3 @@ async function deletePhoto(id, url, askConfirm = true) {
         notify('Errore durante l\'eliminazione: ' + err.message);
     }
 }
-
-// Inizio caricamento (gestito da checkAuth sopra)
