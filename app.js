@@ -27,6 +27,86 @@ function notify(message, type = 'info') {
     alert(message); // Sostituibile con una UI più bella se necessario
 }
 
+// --- Auth Logic ---
+
+async function checkAuth(type) {
+    const isGranted = sessionStorage.getItem(`auth_${type}`);
+    if (isGranted) return true;
+
+    return new Promise((resolve) => {
+        showAuthModal(type, resolve);
+    });
+}
+
+function showAuthModal(type, callback) {
+    // Rimuovi eventuali modal esistenti
+    const existing = document.querySelector('.auth-overlay');
+    if (existing) existing.remove();
+
+    const overlay = document.createElement('div');
+    overlay.className = 'auth-overlay';
+
+    const title = type === 'admin' ? 'Dashboard Admin' : 'Accesso Galleria';
+    const message = type === 'admin' ? 'Inserisci la password amministratore' : 'Inserisci il codice di accesso';
+
+    overlay.innerHTML = `
+        <div class="auth-card">
+            <h2>${title}</h2>
+            <p>${message}</p>
+            <input type="password" class="auth-input" id="auth-password" placeholder="Password...">
+            <button class="auth-submit" id="auth-button">Accedi</button>
+            <div class="auth-error" id="auth-error"></div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const input = overlay.querySelector('#auth-password');
+    const button = overlay.querySelector('#auth-button');
+    const errorDiv = overlay.querySelector('#auth-error');
+
+    input.focus();
+
+    const attemptLogin = async () => {
+        const password = input.value;
+        if (!password) return;
+
+        button.disabled = true;
+        button.textContent = 'Verifica...';
+        errorDiv.textContent = '';
+
+        try {
+            const { data, error } = await supabaseClient.rpc('verify_password', {
+                p_type: type,
+                p_password: password
+            });
+
+            if (error) throw error;
+
+            if (data === true) {
+                sessionStorage.setItem(`auth_${type}`, 'true');
+                overlay.remove();
+                callback(true);
+            } else {
+                errorDiv.textContent = 'Password errata';
+                input.value = '';
+                input.focus();
+            }
+        } catch (err) {
+            console.error('Errore auth:', err);
+            errorDiv.textContent = 'Errore di connessione';
+        } finally {
+            button.disabled = false;
+            button.textContent = 'Accedi';
+        }
+    };
+
+    button.addEventListener('click', attemptLogin);
+    input.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') attemptLogin();
+    });
+}
+
 // --- Lightbox & Gallery Logic ---
 
 let currentGalleryImages = []; // Array of { src, id, element }

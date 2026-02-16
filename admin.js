@@ -4,13 +4,19 @@ const resultsBody = document.getElementById('results-body');
 const selectAllCheckbox = document.getElementById('select-all');
 const deleteSelectedBtn = document.getElementById('delete-selected-btn');
 
-// Semplice protezione della pagina admin
-const ADMIN_PASSWORD = 'admin123'; // Cambiami!
-const pass = prompt('Inserisci la password per accedere alla dashboard:');
-if (pass !== ADMIN_PASSWORD) {
-    alert('Accesso negato');
-    window.location.href = 'index.html';
-}
+// La protezione della pagina ora è gestita tramite Supabase RPC
+
+document.addEventListener('DOMContentLoaded', async () => {
+    const isAuthorized = await checkAuth('admin');
+    if (isAuthorized) {
+        // Rendi visibile il contenuto della pagina
+        const mainContainer = document.querySelector('.container');
+        if (mainContainer) mainContainer.classList.remove('page-hidden');
+        loadResults();
+    } else {
+        window.location.href = 'index.html';
+    }
+});
 
 // --- Logica Upload ---
 
@@ -244,4 +250,4 @@ async function deletePhoto(id, url, askConfirm = true) {
     }
 }
 
-document.addEventListener('DOMContentLoaded', loadResults);
+// Inizio caricamento (gestito da checkAuth sopra)

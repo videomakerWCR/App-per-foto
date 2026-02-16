@@ -1,3 +1,12 @@
+document.addEventListener('DOMContentLoaded', async () => {
+    const isAuthorized = await checkAuth('access');
+    if (isAuthorized) {
+        const mainContainer = document.querySelector('.container');
+        if (mainContainer) mainContainer.classList.remove('page-hidden');
+        loadRanking();
+    }
+});
+
 async function loadRanking() {
     const container = document.getElementById('ranking-container');
 
@@ -64,4 +73,4 @@ async function loadRanking() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', loadRanking);
+// Caricamento gestito da checkAuth sopra

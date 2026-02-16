@@ -1,14 +1,15 @@
-// Semplice protezione della pagina principale per simulare un link "privato"
-const ACCESS_CODE = 'voto2026'; // CAMBIAMI: Questa è la password per vedere il sito
-const enteredCode = localStorage.getItem('access_granted') || prompt('Inserisci il codice di accesso per vedere le foto:');
+// La protezione della pagina ora è gestita tramite Supabase RPC
+// Non ci sono più password in chiaro nel codice frontend.
 
-if (enteredCode !== ACCESS_CODE) {
-    alert('Codice errato');
-    document.body.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100vh; color:white; font-family:sans-serif;"><h1>Accesso Negato</h1></div>';
-    throw new Error('Access Denied');
-} else {
-    localStorage.setItem('access_granted', ACCESS_CODE);
-}
+document.addEventListener('DOMContentLoaded', async () => {
+    const isAuthorized = await checkAuth('access');
+    if (isAuthorized) {
+        // Rendi visibile il contenuto della pagina
+        const mainContainer = document.querySelector('.container');
+        if (mainContainer) mainContainer.classList.remove('page-hidden');
+        loadPhotos();
+    }
+});
 
 // Mappa locale dei voti dell'utente: { photoId: 'like' | 'dislike' | null }
 let userVotes = {};
@@ -157,8 +158,7 @@ async function handleVote(photoId, voteType, button) {
     }
 }
 
-// Inizia il caricamento
-document.addEventListener('DOMContentLoaded', loadPhotos);
+// Inizia il caricamento (ora gestito da checkAuth sopra)
 
 // Esponi funzione di voto globalmente per la lightbox
 window.handleVote = handleVote;
