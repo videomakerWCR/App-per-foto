@@ -188,41 +188,56 @@ function compressImage(file) {
 
 async function uploadPhoto(file) {
     const statusDiv = document.getElementById('upload-status');
-    const fileName = `${Date.now()}-${file.name}`;
+    const timestamp = Date.now();
+    const cleanName = file.name.replace(/[^a-z0-9.]/gi, '_').toLowerCase();
+    const originalPath = `originals/${timestamp}_${cleanName}`;
+    const optimizedPath = `optimized/${timestamp}_${cleanName.replace(/\.[^/.]+$/, "")}.webp`;
 
     try {
-        statusDiv.innerHTML = `<p>Compressione di ${file.name}...</p>`;
+        statusDiv.innerHTML = `<p>Preparazione di ${file.name}...</p>`;
 
-        // 1. Comprimi l'immagine
-        const compressedBlob = await compressImage(file);
-        const fileName = `${Date.now()}-${file.name.replace(/\.[^/.]+$/, "")}.webp`; // Forza estensione .webp
-
-        statusDiv.innerHTML = `<p>Caricamento di ${fileName}...</p>`;
-
-        // 2. Carica su Supabase Storage
-        const { data: storageData, error: storageError } = await supabaseClient.storage
+        // 1. Carica l'ORIGINALE (Alta Risoluzione)
+        statusDiv.innerHTML = `<p>Caricamento originale (${(file.size / 1024 / 1024).toFixed(2)} MB)...</p>`;
+        const { data: originalData, error: originalError } = await supabaseClient.storage
             .from('photos')
-            .upload(fileName, compressedBlob, {
+            .upload(originalPath, file);
+
+        if (originalError) throw originalError;
+
+        // 2. Comprimi per il SITO
+        statusDiv.innerHTML = `<p>Ottimizzazione per il sito...</p>`;
+        const compressedBlob = await compressImage(file);
+
+        // 3. Carica la versione OTTIMIZZATA
+        const { data: optimizedData, error: optimizedError } = await supabaseClient.storage
+            .from('photos')
+            .upload(optimizedPath, compressedBlob, {
                 contentType: 'image/webp'
             });
 
-        if (storageError) throw storageError;
+        if (optimizedError) throw optimizedError;
 
-        // 2. Ottieni URL pubblico
-        const { data: { publicUrl } } = supabaseClient.storage
+        // 4. Ottieni URL pubblici
+        const { data: { publicUrl: originalUrl } } = supabaseClient.storage
             .from('photos')
-            .getPublicUrl(fileName);
+            .getPublicUrl(originalPath);
 
-        // 3. Inserisci record nel DB
+        const { data: { publicUrl: optimizedUrl } } = supabaseClient.storage
+            .from('photos')
+            .getPublicUrl(optimizedPath);
+
+        // 5. Inserisci record nel DB
         const { error: dbError } = await supabaseClient
             .from('photos')
             .insert([{
-                url: publicUrl,
+                url: optimizedUrl,
+                original_url: originalUrl,
                 name: file.name,
                 votes: 0,
                 likes: 0,
                 dislikes: 0,
-                session_id: currentSessionId // Associa alla sessione corrente
+                session_id: currentSessionId,
+                is_selected: false
             }]);
 
         if (dbError) throw dbError;
@@ -230,7 +245,7 @@ async function uploadPhoto(file) {
         statusDiv.innerHTML = `<p style="color: #4ade80;">✅ ${file.name} caricato con successo!</p>`;
     } catch (err) {
         console.error('Errore durante l\'upload:', err);
-        statusDiv.innerHTML = `<p style="color: #f43f5e;">❌ Errore durante l'upload di ${file.name}</p>`;
+        statusDiv.innerHTML = `<p style="color: #f43f5e;">❌ Errore durante l'upload di ${file.name}: ${err.message}</p>`;
     }
 }
 
