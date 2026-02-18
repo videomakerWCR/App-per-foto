@@ -87,6 +87,14 @@
             cursor: zoom-out;
             opacity: 0;
             transition: opacity 0.3s ease;
+            pointer-events: none;
+            /* Disabilitato di base */
+        }
+
+        .lightbox.active {
+            display: flex;
+            opacity: 1;
+            pointer-events: auto;
         }
 
         .lightbox img {

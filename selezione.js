@@ -272,10 +272,7 @@ function openPreview(photoId) {
     lightboxImg.src = photo.url;
     updateLightboxButtonState();
 
-    lightbox.style.display = 'flex';
-    // Forza visibilità (evita problemi di transizione rimasti a 0 in alcuni casi)
-    setTimeout(() => { lightbox.style.opacity = '1'; }, 10);
-
+    lightbox.classList.add('active');
     if (container) container.style.overflow = 'hidden';
 }
 
@@ -324,8 +321,6 @@ function toggleLightboxSelection() {
 }
 
 function handleLightboxClick(event) {
-    // Chiudi se clicchi direttamente sullo sfondo (id='lightbox')
-    // I bottoni e l'immagine hanno stopPropagation() o sono figli gestiti
     if (event.target.id === 'lightbox') {
         closePreview();
     }
@@ -335,12 +330,11 @@ function closePreview() {
     const lightbox = document.getElementById('lightbox');
     const container = document.querySelector('.container');
 
-    lightbox.style.opacity = '0';
+    lightbox.classList.remove('active');
     setTimeout(() => {
-        lightbox.style.display = 'none';
         if (container) container.style.overflow = 'auto';
         currentPreviewId = null;
-    }, 200);
+    }, 300);
 }
 
 // Supporto Tastiera
