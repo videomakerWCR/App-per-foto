@@ -233,7 +233,7 @@ async function downloadAllSelected() {
 
 async function toggleSelection(photoId, newValue) {
     // 1. Update FLUIDO (LOCALE)
-    const photoIndex = photosData.findIndex(p => p.id === photoId);
+    const photoIndex = photosData.findIndex(p => p.id == photoId);
     if (photoIndex !== -1) {
         photosData[photoIndex].is_selected = newValue;
 
@@ -257,8 +257,12 @@ async function toggleSelection(photoId, newValue) {
 
 // Funzioni Lightbox
 function openPreview(photoId) {
-    const photo = photosData.find(p => p.id === photoId);
-    if (!photo) return;
+    console.log("Opening preview for id:", photoId);
+    const photo = photosData.find(p => p.id == photoId);
+    if (!photo) {
+        console.error("Photo not found in photosData for id:", photoId);
+        return;
+    }
 
     currentPreviewId = photoId;
     const lightbox = document.getElementById('lightbox');
@@ -269,31 +273,36 @@ function openPreview(photoId) {
     updateLightboxButtonState();
 
     lightbox.style.display = 'flex';
+    // Forza visibilità (evita problemi di transizione rimasti a 0 in alcuni casi)
+    setTimeout(() => { lightbox.style.opacity = '1'; }, 10);
+
     if (container) container.style.overflow = 'hidden';
 }
 
 function updateLightboxButtonState() {
-    const photo = photosData.find(p => p.id === currentPreviewId);
+    const photo = photosData.find(p => p.id == currentPreviewId);
     const btn = document.getElementById('lightbox-toggle-btn');
     if (!photo || !btn) return;
 
     const span = btn.querySelector('span');
-    const icon = btn.querySelector('i');
+    // Lucide rimpiazza i con svg, quindi cerchiamo entrambi
+    let icon = btn.querySelector('i') || btn.querySelector('svg');
 
     if (photo.is_selected) {
         btn.classList.add('is-selected');
-        span.textContent = "Rimuovi dalla selezione";
-        icon.setAttribute('data-lucide', 'x');
+        if (span) span.textContent = "Rimuovi dalla selezione";
+        if (icon) icon.setAttribute('data-lucide', 'x');
     } else {
         btn.classList.remove('is-selected');
-        span.textContent = "Aggiungi alla selezione";
-        icon.setAttribute('data-lucide', 'plus');
+        if (span) span.textContent = "Aggiungi alla selezione";
+        if (icon) icon.setAttribute('data-lucide', 'plus');
     }
-    lucide.createIcons();
+    // Forza rigenerazione icone solo se necessario
+    if (window.lucide) lucide.createIcons();
 }
 
 function toggleLightboxSelection() {
-    const photo = photosData.find(p => p.id === currentPreviewId);
+    const photo = photosData.find(p => p.id == currentPreviewId);
     if (photo) {
         toggleSelection(photo.id, !photo.is_selected);
     }
@@ -310,7 +319,10 @@ function closePreview() {
     const lightbox = document.getElementById('lightbox');
     const container = document.querySelector('.container');
 
-    lightbox.style.display = 'none';
-    if (container) container.style.overflow = 'auto';
-    currentPreviewId = null;
+    lightbox.style.opacity = '0';
+    setTimeout(() => {
+        lightbox.style.display = 'none';
+        if (container) container.style.overflow = 'auto';
+        currentPreviewId = null;
+    }, 200);
 }
