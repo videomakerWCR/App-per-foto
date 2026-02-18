@@ -324,8 +324,9 @@ function toggleLightboxSelection() {
 }
 
 function handleLightboxClick(event) {
-    // Chiudi se clicchi direttamente sullo sfondo o sul tasto chiudi
-    if (event.target.id === 'lightbox' || event.target.closest('.lightbox-close')) {
+    // Chiudi se clicchi direttamente sullo sfondo (id='lightbox')
+    // I bottoni e l'immagine hanno stopPropagation() o sono figli gestiti
+    if (event.target.id === 'lightbox') {
         closePreview();
     }
 }
