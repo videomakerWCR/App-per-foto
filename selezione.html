@@ -102,22 +102,62 @@
             position: absolute;
             top: 2rem;
             right: 2rem;
-            background: white;
-            color: black;
-            border: none;
-            width: 40px;
-            height: 40px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-            transition: transform 0.2s;
+            transition: all 0.2s;
+            z-index: 1010;
+            pointer-events: auto;
+            backdrop-filter: blur(5px);
         }
 
         .lightbox-close:hover {
             transform: scale(1.1);
+            background: white;
+            color: black;
+        }
+
+        .lightbox-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 1010;
+            pointer-events: auto;
+            backdrop-filter: blur(5px);
+        }
+
+        .lightbox-nav:hover {
+            background: var(--primary);
+            color: black;
+            transform: translateY(-50%) scale(1.1);
+            box-shadow: 0 0 20px rgba(74, 222, 128, 0.3);
+        }
+
+        .lightbox-nav.prev {
+            left: 2rem;
+        }
+
+        .lightbox-nav.next {
+            right: 2rem;
         }
 
         .lightbox-toggle {
@@ -137,7 +177,8 @@
             gap: 0.8rem;
             box-shadow: 0 10px 30px rgba(74, 222, 128, 0.4);
             transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            z-index: 1001;
+            z-index: 1010;
+            pointer-events: auto;
         }
 
         .lightbox-toggle.is-selected {
@@ -148,10 +189,6 @@
 
         .lightbox-toggle:hover {
             transform: translateX(-50%) scale(1.05);
-        }
-
-        .lightbox-toggle:active {
-            transform: translateX(-50%) scale(0.95);
         }
 
         /* Fluidity tweaks */
@@ -337,8 +374,19 @@
 
     <div id="lightbox" class="lightbox" onclick="handleLightboxClick(event)">
         <button class="lightbox-close" onclick="closePreview()"><i data-lucide="x"></i></button>
-        <img id="lightbox-img" src="" alt="Anteprima">
-        <button id="lightbox-toggle-btn" class="lightbox-toggle" onclick="toggleLightboxSelection()">
+
+        <button class="lightbox-nav prev" onclick="changePhoto(-1); event.stopPropagation();">
+            <i data-lucide="chevron-left"></i>
+        </button>
+
+        <img id="lightbox-img" src="" alt="Anteprima" onclick="event.stopPropagation()">
+
+        <button class="lightbox-nav next" onclick="changePhoto(1); event.stopPropagation();">
+            <i data-lucide="chevron-right"></i>
+        </button>
+
+        <button id="lightbox-toggle-btn" class="lightbox-toggle"
+            onclick="toggleLightboxSelection(); event.stopPropagation();">
             <i data-lucide="plus"></i>
             <span>Aggiungi alla selezione</span>
         </button>

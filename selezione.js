@@ -301,6 +301,21 @@ function updateLightboxButtonState() {
     if (window.lucide) lucide.createIcons();
 }
 
+function changePhoto(direction) {
+    if (!currentPreviewId) return;
+
+    const currentIndex = photosData.findIndex(p => p.id == currentPreviewId);
+    if (currentIndex === -1) return;
+
+    let nextIndex = currentIndex + direction;
+
+    // Loop infinito
+    if (nextIndex < 0) nextIndex = photosData.length - 1;
+    if (nextIndex >= photosData.length) nextIndex = 0;
+
+    openPreview(photosData[nextIndex].id);
+}
+
 function toggleLightboxSelection() {
     const photo = photosData.find(p => p.id == currentPreviewId);
     if (photo) {
@@ -309,8 +324,8 @@ function toggleLightboxSelection() {
 }
 
 function handleLightboxClick(event) {
-    // Chiudi solo se clicchi sullo sfondo, non sul bottone o sull'immagine
-    if (event.target.id === 'lightbox' || event.target.className === 'lightbox-close' || event.target.closest('.lightbox-close')) {
+    // Chiudi se clicchi direttamente sullo sfondo o sul tasto chiudi
+    if (event.target.id === 'lightbox' || event.target.closest('.lightbox-close')) {
         closePreview();
     }
 }
@@ -326,3 +341,13 @@ function closePreview() {
         currentPreviewId = null;
     }, 200);
 }
+
+// Supporto Tastiera
+document.addEventListener('keydown', (e) => {
+    const lightbox = document.getElementById('lightbox');
+    if (lightbox.style.display === 'flex') {
+        if (e.key === 'ArrowRight') changePhoto(1);
+        if (e.key === 'ArrowLeft') changePhoto(-1);
+        if (e.key === 'Escape') closePreview();
+    }
+});
