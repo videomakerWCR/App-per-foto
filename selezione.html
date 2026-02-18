@@ -111,6 +111,45 @@
             align-items: center;
             justify-content: center;
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            transition: transform 0.2s;
+        }
+
+        .lightbox-close:hover {
+            transform: scale(1.1);
+        }
+
+        .lightbox-toggle {
+            position: absolute;
+            bottom: 3rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--primary);
+            color: black;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            box-shadow: 0 10px 30px rgba(74, 222, 128, 0.4);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 1001;
+        }
+
+        .lightbox-toggle.is-selected {
+            background: #f43f5e;
+            color: white;
+            box-shadow: 0 10px 30px rgba(244, 63, 94, 0.4);
+        }
+
+        .lightbox-toggle:hover {
+            transform: translateX(-50%) scale(1.05);
+        }
+
+        .lightbox-toggle:active {
+            transform: translateX(-50%) scale(0.95);
         }
 
         /* Fluidity tweaks */
@@ -294,9 +333,13 @@
         </div>
     </div>
 
-    <div id="lightbox" class="lightbox" onclick="closePreview()">
-        <button class="lightbox-close"><i data-lucide="x"></i></button>
+    <div id="lightbox" class="lightbox" onclick="handleLightboxClick(event)">
+        <button class="lightbox-close" onclick="closePreview()"><i data-lucide="x"></i></button>
         <img id="lightbox-img" src="" alt="Anteprima">
+        <button id="lightbox-toggle-btn" class="lightbox-toggle" onclick="toggleLightboxSelection()">
+            <i data-lucide="plus"></i>
+            <span>Aggiungi alla selezione</span>
+        </button>
     </div>
 
     <!-- Scripts -->

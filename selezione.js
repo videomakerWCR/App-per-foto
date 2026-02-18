@@ -1,5 +1,6 @@
 let currentSessionId = 0;
 let photosData = []; // Cache locale per fluidità
+let currentPreviewId = null; // ID della foto attualmente in preview
 
 document.addEventListener('DOMContentLoaded', async () => {
     const isAuthorized = await checkAuth('admin');
@@ -23,10 +24,9 @@ const zipProgress = document.getElementById('zip-progress');
 refreshBtn.addEventListener('click', loadPhotos);
 downloadAllBtn.addEventListener('click', downloadAllSelected);
 
-sessionSelect.addEventListener('change', (e) => {
-    /* ... (existing session logic) ... */
+sessionSelect.addEventListener('change', async (e) => {
     currentSessionId = parseInt(e.target.value);
-    loadPhotos();
+    await loadPhotos();
 });
 
 async function loadSessions() {
@@ -101,9 +101,10 @@ function renderLists() {
         // Item per TUTTE LE FOTO
         const item = document.createElement('div');
         item.className = 'photo-list-item';
+        item.id = `photo-row-${photo.id}`;
         item.innerHTML = `
             <div class="photo-rank">#${rank}</div>
-            <img src="${photo.url}" alt="${photo.name}" onclick="openPreview('${photo.url}')">
+            <img src="${photo.url}" alt="${photo.name}" onclick="openPreview('${photo.id}')">
             <div class="photo-meta">
                 <div style="font-weight: 600;">${photo.name}</div>
                 <div style="font-size: 0.8rem; color: var(--text-muted);">
@@ -129,7 +130,7 @@ function renderLists() {
             const isOriginal = photo.original_url ? true : false;
 
             selectedItem.innerHTML = `
-                <img src="${photo.url}" alt="${photo.name}" style="width: 40px; height: 40px;" onclick="openPreview('${photo.url}')">
+                <img src="${photo.url}" alt="${photo.name}" style="width: 40px; height: 40px;" onclick="openPreview('${photo.id}')">
                 <div class="photo-meta">
                     <div style="font-weight: 600; font-size: 0.9rem;">${photo.name}</div>
                     <div style="font-size: 0.8rem;">Pos: #${rank} | Score: ${score}</div>
@@ -158,6 +159,11 @@ function renderLists() {
 
     selectionCount.textContent = selectedCount;
     lucide.createIcons();
+
+    // Se il lightbox è aperto, aggiorna anche il tasto lì dentro
+    if (currentPreviewId) {
+        updateLightboxButtonState();
+    }
 }
 
 async function downloadAllSelected() {
@@ -250,15 +256,54 @@ async function toggleSelection(photoId, newValue) {
 }
 
 // Funzioni Lightbox
-function openPreview(url) {
+function openPreview(photoId) {
+    const photo = photosData.find(p => p.id === photoId);
+    if (!photo) return;
+
+    currentPreviewId = photoId;
     const lightbox = document.getElementById('lightbox');
     const lightboxImg = document.getElementById('lightbox-img');
     const container = document.querySelector('.container');
 
-    lightboxImg.src = url;
+    lightboxImg.src = photo.url;
+    updateLightboxButtonState();
+
     lightbox.style.display = 'flex';
-    // Blocca scroll pagina
     if (container) container.style.overflow = 'hidden';
+}
+
+function updateLightboxButtonState() {
+    const photo = photosData.find(p => p.id === currentPreviewId);
+    const btn = document.getElementById('lightbox-toggle-btn');
+    if (!photo || !btn) return;
+
+    const span = btn.querySelector('span');
+    const icon = btn.querySelector('i');
+
+    if (photo.is_selected) {
+        btn.classList.add('is-selected');
+        span.textContent = "Rimuovi dalla selezione";
+        icon.setAttribute('data-lucide', 'x');
+    } else {
+        btn.classList.remove('is-selected');
+        span.textContent = "Aggiungi alla selezione";
+        icon.setAttribute('data-lucide', 'plus');
+    }
+    lucide.createIcons();
+}
+
+function toggleLightboxSelection() {
+    const photo = photosData.find(p => p.id === currentPreviewId);
+    if (photo) {
+        toggleSelection(photo.id, !photo.is_selected);
+    }
+}
+
+function handleLightboxClick(event) {
+    // Chiudi solo se clicchi sullo sfondo, non sul bottone o sull'immagine
+    if (event.target.id === 'lightbox' || event.target.className === 'lightbox-close' || event.target.closest('.lightbox-close')) {
+        closePreview();
+    }
 }
 
 function closePreview() {
@@ -267,4 +312,5 @@ function closePreview() {
 
     lightbox.style.display = 'none';
     if (container) container.style.overflow = 'auto';
+    currentPreviewId = null;
 }
