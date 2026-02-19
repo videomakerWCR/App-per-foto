@@ -316,6 +316,32 @@
             background: rgba(0, 0, 0, 0.3);
             margin-right: 5px;
         }
+
+        /* Scrollable Selection List */
+        #selected-photos-list {
+            max-height: calc(100vh - 350px);
+            overflow-y: auto;
+            padding-right: 10px;
+            margin-right: -10px;
+        }
+
+        #selected-photos-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #selected-photos-list::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+
+        #selected-photos-list::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 10px;
+        }
+
+        #selected-photos-list::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-hover);
+        }
     </style>
 </head>
 
