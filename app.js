@@ -30,6 +30,45 @@ function notify(message, type = 'info') {
     alert(message); // Sostituibile con una UI più bella se necessario
 }
 
+// Forza il download di un file (utile per Supabase storage che spesso apre in nuova scheda)
+async function forceDownload(url, filename, btn) {
+    if (!url) return;
+
+    // Feedback visivo
+    const originalContent = btn ? btn.innerHTML : null;
+    if (btn) {
+        btn.style.opacity = '0.5';
+        btn.style.pointerEvents = 'none';
+        btn.innerHTML = '<span class="loading-spinner">...</span>';
+    }
+
+    try {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = filename || 'download';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        // Pulizia
+        window.URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+        console.error("Errore download:", err);
+        notify("Errore durante il download del file.");
+    } finally {
+        if (btn) {
+            btn.style.opacity = '1';
+            btn.style.pointerEvents = 'auto';
+            btn.innerHTML = originalContent;
+            if (window.lucide) lucide.createIcons();
+        }
+    }
+}
+
 // --- Auth Logic ---
 
 let authPromise = null;
@@ -169,7 +208,7 @@ function initLightbox() {
             <div class="lightbox-controls">
                 <button class="lightbox-btn lb-like-btn"><i data-lucide="thumbs-up"></i></button>
                 <button class="lightbox-btn lb-dislike-btn"><i data-lucide="thumbs-down"></i></button>
-                <a href="" download="" class="lightbox-btn lb-download-btn" title="Scarica Originale"><i data-lucide="download"></i></a>
+                <button class="lightbox-btn lb-download-btn" title="Scarica Originale"><i data-lucide="download"></i></button>
             </div>
         `;
         document.body.appendChild(lightbox);
@@ -179,6 +218,11 @@ function initLightbox() {
         lightbox.querySelector('.lightbox-close').addEventListener('click', closeLightbox);
         lightbox.querySelector('.lightbox-prev').addEventListener('click', (e) => { e.stopPropagation(); prevImage(); });
         lightbox.querySelector('.lightbox-next').addEventListener('click', (e) => { e.stopPropagation(); nextImage(); });
+        lightbox.querySelector('.lb-download-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            const currentData = currentGalleryImages[currentImageIndex];
+            forceDownload(currentData.original, currentData.name, e.currentTarget);
+        });
 
         // Chiudi al click su sfondo (ma non su img o controlli)
         lightbox.addEventListener('click', (e) => {
@@ -291,11 +335,11 @@ function updateLightboxContent() {
     likeBtn.classList.remove('active-like');
     dislikeBtn.classList.remove('active-dislike');
 
-    // Aggiorna link download
+    // Aggiorna link download (rimosso settaggio href diretto, ora gestito dal click listener)
     const downloadBtn = lightbox.querySelector('.lb-download-btn');
     if (downloadBtn) {
-        downloadBtn.href = currentData.original;
-        downloadBtn.download = currentData.name;
+        // downloadBtn.href = currentData.original; // Non più necessario con forceDownload
+        // downloadBtn.download = currentData.name;
     }
 
     // Controlla se siamo in voting page guardando i voti dell'utente

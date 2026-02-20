@@ -191,9 +191,9 @@ function createPhotoCard(photo, index) {
                     <i data-lucide="thumbs-down"></i>
                     <span class="dislike-count">${dislikes}</span>
                 </button>
-                <a href="${photo.original_url || photo.url}" download="${photo.name}" class="vote-btn download-btn" title="Scarica Originale">
+                <button onclick="event.stopPropagation(); forceDownload('${photo.original_url || photo.url}', '${photo.name}', this)" class="vote-btn download-btn" title="Scarica Originale">
                     <i data-lucide="download"></i>
-                </a>
+                </button>
             </div>
         </div>
     `;
