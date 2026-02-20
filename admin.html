@@ -27,7 +27,17 @@
                     </a>
                 </div>
                 <h1 style="margin: 0;">Dashboard Admin</h1>
-                <div style="width: 80px;"></div> <!-- Spacer per centrare il titolo -->
+
+                <!-- Widget Storage -->
+                <div id="storage-usage-widget" class="storage-widget" style="display: none;">
+                    <div class="storage-info">
+                        <i data-lucide="hard-drive" style="width: 14px; height: 14px;"></i>
+                        <span id="storage-used-text">0 MB / 1 GB</span>
+                    </div>
+                    <div class="storage-bar">
+                        <div id="storage-bar-fill" class="storage-bar-fill"></div>
+                    </div>
+                </div>
             </div>
             <p class="subtitle">Trascina le foto per caricarle e visualizza la classifica in tempo reale.</p>
 
@@ -61,6 +71,24 @@
                 <p>Oppure clicca per selezionarle dal computer</p>
                 <input type="file" id="file-input" multiple accept="image/*" style="display: none;">
             </div>
+
+            <!-- Nuovo Container Progresso -->
+            <div id="upload-progress-container" class="upload-card" style="display: none; margin-bottom: 2rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h3 style="margin: 0; font-size: 1.1rem;">Caricamento in corso...</h3>
+                    <span id="global-progress-text" style="font-size: 0.9rem; color: var(--text-muted);">0 di 0
+                        foto</span>
+                </div>
+
+                <div class="progress-bar-container" style="margin-bottom: 1.5rem;">
+                    <div id="global-progress-fill" class="progress-bar-fill" style="width: 0%;"></div>
+                </div>
+
+                <div id="individual-progress-list" class="scrollable-list" style="max-height: 200px; overflow-y: auto;">
+                    <!-- Verranno iniettati gli item via JS -->
+                </div>
+            </div>
+
             <div id="upload-status"></div>
         </section>
 

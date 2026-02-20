@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Carica le sessioni e poi i risultati
         await loadSessions();
         loadResults();
+        updateStorageUsage(); // Caricamento iniziale spazio
     } else {
         window.location.href = 'index.html';
     }
@@ -131,14 +132,62 @@ async function handleFiles(files) {
         return;
     }
 
-    const statusDiv = document.getElementById('upload-status');
-    statusDiv.innerHTML = ''; // Reset stati precedenti
+    const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
+    if (imageFiles.length === 0) return;
 
-    for (const file of files) {
-        if (!file.type.startsWith('image/')) continue;
-        await uploadPhoto(file);
+    // Inizializza UI Progresso
+    const progressContainer = document.getElementById('upload-progress-container');
+    const globalProgressFill = document.getElementById('global-progress-fill');
+    const globalProgressText = document.getElementById('global-progress-text');
+    const individualList = document.getElementById('individual-progress-list');
+
+    progressContainer.style.display = 'block';
+    individualList.innerHTML = '';
+    globalProgressFill.style.width = '0%';
+    globalProgressText.innerText = `0 di ${imageFiles.length} foto`;
+
+    let completedCount = 0;
+
+    for (let i = 0; i < imageFiles.length; i++) {
+        const file = imageFiles[i];
+
+        // Crea item nella lista
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'upload-item';
+        itemDiv.id = `upload-item-${i}`;
+        itemDiv.innerHTML = `
+            <div class="upload-item-header">
+                <span class="upload-item-name">${file.name}</span>
+                <span class="upload-item-status">In attesa...</span>
+            </div>
+            <div class="progress-bar-container">
+                <div class="progress-bar-fill item-progress-fill" style="width: 0%;"></div>
+            </div>
+        `;
+        individualList.prepend(itemDiv); // Ultimo in alto
+
+        try {
+            await uploadPhotoWithProgress(file, i, imageFiles.length, (filePercent) => {
+                // Calcola progresso globale: (foto_completate + progresso_foto_corrente) / total_foto
+                const globalPercent = ((completedCount + (filePercent / 100)) / imageFiles.length) * 100;
+                globalProgressFill.style.width = `${globalPercent}%`;
+            });
+
+            completedCount++;
+            globalProgressText.innerText = `${completedCount} di ${imageFiles.length} foto`;
+        } catch (err) {
+            console.error(`Errore upload ${file.name}:`, err);
+            // Il progresso globale continua anche se uno fallisce
+            completedCount++;
+            globalProgressText.innerText = `${completedCount} di ${imageFiles.length} foto`;
+        }
     }
-    loadResults();
+
+    // Caricamento finito
+    setTimeout(() => {
+        loadResults();
+        updateStorageUsage(); // Aggiorna spazio dopo upload
+    }, 1000);
 }
 
 // Funzione per comprimere l'immagine
@@ -186,47 +235,65 @@ function compressImage(file) {
     });
 }
 
-async function uploadPhoto(file) {
-    const statusDiv = document.getElementById('upload-status');
+// Funzione helper per aggiornare la UI dell'item singolo
+function updateItemUI(itemId, percent, status, isError = false) {
+    const item = document.getElementById(`upload-item-${itemId}`);
+    if (!item) return;
+    const fill = item.querySelector('.item-progress-fill');
+    const statusText = item.querySelector('.upload-item-status');
+
+    fill.style.width = `${percent}%`;
+    statusText.innerText = status;
+
+    if (isError) {
+        fill.style.background = 'var(--dislike-color)';
+        statusText.style.color = 'var(--dislike-color)';
+    } else if (percent === 100) {
+        fill.style.background = '#4ade80';
+        statusText.style.color = '#4ade80';
+    }
+}
+
+async function uploadPhotoWithProgress(file, index, total, onTotalProgress) {
     const timestamp = Date.now();
     const cleanName = file.name.replace(/[^a-z0-9.]/gi, '_').toLowerCase();
     const originalPath = `originals/${timestamp}_${cleanName}`;
     const optimizedPath = `optimized/${timestamp}_${cleanName.replace(/\.[^/.]+$/, "")}.webp`;
 
     try {
-        statusDiv.innerHTML = `<p>Preparazione di ${file.name}...</p>`;
+        // Step 1: Caricamento Originale (0-40%)
+        updateItemUI(index, 10, `<span class="loading-spinner"></span> Caricamento originale...`);
+        onTotalProgress(10);
 
-        // 1. Carica l'ORIGINALE (Alta Risoluzione)
-        statusDiv.innerHTML = `<p>Caricamento originale (${(file.size / 1024 / 1024).toFixed(2)} MB)...</p>`;
-        const { data: originalData, error: originalError } = await supabaseClient.storage
+        const { error: originalError } = await supabaseClient.storage
             .from('photos')
             .upload(originalPath, file);
 
         if (originalError) throw originalError;
 
-        // 2. Comprimi per il SITO
-        statusDiv.innerHTML = `<p>Ottimizzazione per il sito...</p>`;
+        updateItemUI(index, 40, `<span class="loading-spinner"></span> Ottimizzazione...`);
+        onTotalProgress(40);
+
+        // Step 2: Compressione (40-60%)
         const compressedBlob = await compressImage(file);
 
-        // 3. Carica la versione OTTIMIZZATA
-        const { data: optimizedData, error: optimizedError } = await supabaseClient.storage
+        updateItemUI(index, 60, `<span class="loading-spinner"></span> Caricamento ottimizzata...`);
+        onTotalProgress(60);
+
+        // Step 3: Caricamento Ottimizzata (60-90%)
+        const { error: optimizedError } = await supabaseClient.storage
             .from('photos')
-            .upload(optimizedPath, compressedBlob, {
-                contentType: 'image/webp'
-            });
+            .upload(optimizedPath, compressedBlob, { contentType: 'image/webp' });
 
         if (optimizedError) throw optimizedError;
 
-        // 4. Ottieni URL pubblici
-        const { data: { publicUrl: originalUrl } } = supabaseClient.storage
-            .from('photos')
-            .getPublicUrl(originalPath);
+        updateItemUI(index, 90, `<span class="loading-spinner"></span> Salvataggio nel database...`);
+        onTotalProgress(90);
 
-        const { data: { publicUrl: optimizedUrl } } = supabaseClient.storage
-            .from('photos')
-            .getPublicUrl(optimizedPath);
+        // Step 4: Database (90-100%)
+        const { data: { publicUrl: originalUrl } } = supabaseClient.storage.from('photos').getPublicUrl(originalPath);
+        const { data: { publicUrl: optimizedUrl } } = supabaseClient.storage.from('photos').getPublicUrl(optimizedPath);
 
-        // 5. Inserisci record nel DB
         const { error: dbError } = await supabaseClient
             .from('photos')
             .insert([{
@@ -242,10 +309,12 @@ async function uploadPhoto(file) {
 
         if (dbError) throw dbError;
 
-        statusDiv.innerHTML = `<p style="color: #4ade80;">✅ ${file.name} caricato con successo!</p>`;
+        updateItemUI(index, 100, `✅ Completato`);
+        onTotalProgress(100);
+
     } catch (err) {
-        console.error('Errore durante l\'upload:', err);
-        statusDiv.innerHTML = `<p style="color: #f43f5e;">❌ Errore durante l'upload di ${file.name}: ${err.message}</p>`;
+        updateItemUI(index, 100, `❌ Errore: ${err.message}`, true);
+        throw err;
     }
 }
 
@@ -278,6 +347,7 @@ deleteSelectedBtn.addEventListener('click', async () => {
     deleteSelectedBtn.innerHTML = '<i data-lucide="trash-2"></i> Elimina Selezionate';
     selectAllCheckbox.checked = false;
     loadResults();
+    updateStorageUsage(); // Aggiorna spazio dopo cancellazione
 });
 
 function updateDeleteButton() {
@@ -360,9 +430,68 @@ async function deletePhoto(id, url, askConfirm = true) {
         const fileName = url.split('/').pop();
         await supabaseClient.storage.from('photos').remove([fileName]);
 
-        if (askConfirm) loadResults();
+        if (askConfirm) {
+            loadResults();
+            updateStorageUsage(); // Aggiorna spazio dopo cancellazione singola
+        }
     } catch (err) {
         console.error('Errore eliminazione:', err);
         notify('Errore durante l\'eliminazione: ' + err.message);
+    }
+}
+
+// --- Funzioni Utility per Spazio Archiviazione ---
+
+async function updateStorageUsage() {
+    if (!supabaseClient) return;
+
+    try {
+        const { data: totalBytes, error } = await supabaseClient.rpc('get_storage_usage');
+
+        if (error) {
+            console.warn("RPC get_storage_usage non trovata o errore:", error.message);
+            return;
+        }
+
+        const widget = document.getElementById('storage-usage-widget');
+        const fill = document.getElementById('storage-bar-fill');
+        const text = document.getElementById('storage-used-text');
+
+        if (!widget || !fill || !text) return;
+
+        widget.style.display = 'flex';
+
+        const gigabyte = 1024 * 1024 * 1024;
+        const megabyte = 1024 * 1024;
+        const limit = gigabyte; // Limite free tier Supabase: 1GB
+
+        const usedMB = totalBytes / megabyte;
+        const usedGB = totalBytes / gigabyte;
+        const percent = Math.min((totalBytes / limit) * 100, 100);
+
+        // Formattazione testo
+        if (totalBytes > megabyte * 100) {
+            text.innerText = `${usedGB.toFixed(2)} GB / 1 GB`;
+        } else {
+            text.innerText = `${usedMB.toFixed(1)} MB / 1 GB`;
+        }
+
+        // Aggiorna Barra
+        fill.style.width = `${percent}%`;
+
+        // Colore dinamico
+        if (percent > 90) {
+            fill.style.background = '#f43f5e'; // Rosso
+            fill.style.boxShadow = '0 0 8px rgba(244, 63, 94, 0.4)';
+        } else if (percent > 70) {
+            fill.style.background = '#facc15'; // Giallo
+            fill.style.boxShadow = '0 0 8px rgba(250, 204, 21, 0.4)';
+        } else {
+            fill.style.background = '#4ade80'; // Verde
+            fill.style.boxShadow = '0 0 8px rgba(74, 222, 128, 0.4)';
+        }
+
+    } catch (err) {
+        console.error("Errore recupero spazio:", err);
     }
 }
