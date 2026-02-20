@@ -253,6 +253,16 @@ body {
     box-shadow: 0 0 20px rgba(244, 63, 94, 0.4);
 }
 
+.lb-download-btn {
+    border-color: #10b981 !important;
+    color: #10b981 !important;
+}
+
+.lb-download-btn:hover {
+    background: rgba(16, 185, 129, 0.1) !important;
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.4) !important;
+}
+
 /* Hide navigation arrows on mobile (use swipe instead) */
 @media (max-width: 768px) {
     .lightbox-nav {
@@ -465,6 +475,13 @@ h1 {
     background: var(--dislike-color);
     border-color: var(--dislike-color);
     color: white;
+}
+
+.download-btn:hover {
+    background: rgba(16, 185, 129, 0.15);
+    border-color: #10b981;
+    color: #10b981;
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
 }
 
 /* Pulse animation for vote feedback */

@@ -176,7 +176,7 @@ function createPhotoCard(photo, index) {
     const dislikes = photo.dislikes || 0;
 
     div.innerHTML = `
-        <img src="${photo.url}" alt="Foto" loading="lazy">
+        <img src="${photo.url}" alt="Foto" loading="lazy" data-original="${photo.original_url || photo.url}">
         <div class="photo-info">
             <div class="vote-buttons">
                 <button class="vote-btn like-btn ${currentVote === 'like' ? 'active' : ''}" 
@@ -191,6 +191,9 @@ function createPhotoCard(photo, index) {
                     <i data-lucide="thumbs-down"></i>
                     <span class="dislike-count">${dislikes}</span>
                 </button>
+                <a href="${photo.original_url || photo.url}" download="${photo.name}" class="vote-btn download-btn" title="Scarica Originale">
+                    <i data-lucide="download"></i>
+                </a>
             </div>
         </div>
     `;

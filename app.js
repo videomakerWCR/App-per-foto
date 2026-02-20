@@ -169,6 +169,7 @@ function initLightbox() {
             <div class="lightbox-controls">
                 <button class="lightbox-btn lb-like-btn"><i data-lucide="thumbs-up"></i></button>
                 <button class="lightbox-btn lb-dislike-btn"><i data-lucide="thumbs-down"></i></button>
+                <a href="" download="" class="lightbox-btn lb-download-btn" title="Scarica Originale"><i data-lucide="download"></i></a>
             </div>
         `;
         document.body.appendChild(lightbox);
@@ -235,7 +236,13 @@ function initLightbox() {
                     // In classifica.js non abbiamo messo ID alla card, dovremo metterlo
                     // Se non c'è ID, il voto non funzionerà
                 }
-                return { src: img.src, id: photoId, element: card };
+                return {
+                    src: img.src,
+                    id: photoId,
+                    element: card,
+                    original: img.dataset.original || img.src,
+                    name: img.alt || 'foto'
+                };
             });
 
             currentImageIndex = images.indexOf(img);
@@ -283,6 +290,13 @@ function updateLightboxContent() {
     // Reset pulsanti
     likeBtn.classList.remove('active-like');
     dislikeBtn.classList.remove('active-dislike');
+
+    // Aggiorna link download
+    const downloadBtn = lightbox.querySelector('.lb-download-btn');
+    if (downloadBtn) {
+        downloadBtn.href = currentData.original;
+        downloadBtn.download = currentData.name;
+    }
 
     // Controlla se siamo in voting page guardando i voti dell'utente
     if (typeof userVotes !== 'undefined' && currentData.id) {
