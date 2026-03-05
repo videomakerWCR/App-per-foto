@@ -446,10 +446,11 @@ async function updateStorageUsage() {
     if (!supabaseClient) return;
 
     try {
-        const { data: totalBytes, error } = await supabaseClient.rpc('get_storage_usage');
+        const { data: totalBytes, error } = await supabaseClient.rpc('get_storage_usage_photos');
 
         if (error) {
-            console.warn("RPC get_storage_usage non trovata o errore:", error.message);
+            console.warn("⚠️ Spazio Archiviazione: La funzione 'get_storage_usage_photos' non è stata ancora creata su Supabase.");
+            console.log("Esegui lo script SQL fornito per abilitare questa funzione.");
             return;
         }
 
@@ -459,6 +460,7 @@ async function updateStorageUsage() {
 
         if (!widget || !fill || !text) return;
 
+        // Se arriviamo qui, l'RPC ha funzionato
         widget.style.display = 'flex';
 
         const gigabyte = 1024 * 1024 * 1024;

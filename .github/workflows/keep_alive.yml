@@ -1,0 +1,30 @@
+name: Supabase Keep-Alive
+
+on:
+  schedule:
+    # Gira ogni giorno alle 04:00 AM
+    - cron: '0 4 * * *'
+  workflow_dispatch: # Permette l'avvio manuale per test
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install @supabase/supabase-js
+
+      - name: Run Keep-Alive Script
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: |
+          # Esegue lo script
+          node keep_alive.js
